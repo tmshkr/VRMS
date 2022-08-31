@@ -17,8 +17,5 @@
     "line-reader": "^0.4.0",
     "mongodb": "^4.4.1",
     "rrule": "^2.6.4"
-  },
-  "prisma": {
-    "schema": "../prisma/schema.prisma"
   }
 }

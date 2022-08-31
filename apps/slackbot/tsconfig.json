@@ -1,9 +1,10 @@
 {
   "compilerOptions": {
     "noImplicitAny": false,
-    "esModuleInterop": true,
-    "sourceMap": true,
     "outDir": "dist",
     "baseUrl": "src"
-  }
+  },
+  "extends": "tsconfig/base.json",
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
+  "exclude": ["node_modules"]
 }

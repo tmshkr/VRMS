@@ -4,7 +4,7 @@ import { getNextOccurrence } from "lib/rrule";
 import axios from "axios";
 const jwt = require("jsonwebtoken");
 
-export const getHomeTab = async (slack_id) => {
+export const getHomeTab = async (slack_id: string) => {
   const [quote] = await axios
     .get("https://zenquotes.io/api/today")
     .then((res) => res.data)
@@ -15,21 +15,28 @@ export const getHomeTab = async (slack_id) => {
     accounts,
     team_assignments,
     meeting_assignments,
-  } = await prisma.user.findUnique({
-    where: { slack_id },
-    include: {
-      accounts: true,
-      team_assignments: {
-        orderBy: { created_at: "asc" },
-        select: { project: true },
-      },
-      meeting_assignments: {
-        select: {
-          meeting: true,
+  } = await prisma.user
+    .findUnique({
+      where: { slack_id },
+      include: {
+        accounts: true,
+        team_assignments: {
+          orderBy: { created_at: "asc" },
+          select: { project: true },
+        },
+        meeting_assignments: {
+          select: {
+            meeting: true,
+          },
         },
       },
-    },
-  });
+    })
+    .then((user) => {
+      if (!user) {
+        throw new Error(`Slack user not found: ${slack_id}`);
+      }
+      return user;
+    });
 
   return {
     user_id: slack_id,
@@ -40,7 +47,7 @@ export const getHomeTab = async (slack_id) => {
           type: "header",
           text: {
             type: "plain_text",
-            text: ":house: Welcome to VRMS",
+            text: `:house: Welcome to VRMS`,
             emoji: true,
           },
         },

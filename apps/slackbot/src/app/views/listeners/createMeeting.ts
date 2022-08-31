@@ -48,10 +48,17 @@ export const createMeeting = async ({ ack, body, view, client, logger }) => {
       break;
   }
 
-  const meetingCreator = await prisma.user.findUnique({
-    where: { slack_id: body.user.id },
-    select: { id: true },
-  });
+  const meetingCreator = await prisma.user
+    .findUnique({
+      where: { slack_id: body.user.id },
+      select: { id: true },
+    })
+    .then((user) => {
+      if (!user) {
+        throw new Error(`Slack user not found: ${body.user.id}`);
+      }
+      return user;
+    });
 
   const participants = await prisma.user.findMany({
     where: {

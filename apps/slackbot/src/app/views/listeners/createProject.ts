@@ -8,11 +8,19 @@ export const createProject = async ({ ack, body, view, client, logger }) => {
   const values = getInnerValues(view.state.values);
   const { new_project_title, team_members } = values;
 
-  const meetingCreator = await prisma.user.findUnique({
-    where: { slack_id: body.user.id },
-    select: { id: true },
-  });
-  const members = await prisma.user.findMany({
+  const meetingCreator = await prisma.user
+    .findUnique({
+      where: { slack_id: body.user.id },
+      select: { id: true },
+    })
+    .then((user) => {
+      if (!user) {
+        throw new Error(`Slack user not found: ${body.user.id}`);
+      }
+      return user;
+    });
+
+  const members: any = await prisma.user.findMany({
     where: {
       slack_id: {
         in: team_members.selected_conversations,
