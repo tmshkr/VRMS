@@ -1,0 +1,176 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+generator erd {
+  provider = "prisma-erd-generator"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum AppRole {
+  ADMIN
+  FACILITATOR
+}
+
+model AppRoleOnUser {
+  user_id Int
+  role    AppRole
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  user User @relation(fields: [user_id], references: [id])
+
+  @@id([user_id, role])
+}
+
+model Account {
+  provider            String
+  provider_account_id String
+
+  access_token              String  @db.Text
+  email                     String
+  gh_username               String
+  name                      String
+  scope                     String
+  token_type                String
+  type                      String
+  two_factor_authentication Boolean
+  vrms_user_id              Int
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  user User @relation(fields: [vrms_user_id], references: [id], onDelete: Cascade)
+
+  @@id([provider, provider_account_id])
+  @@unique([provider, vrms_user_id])
+}
+
+model User {
+  id Int @id @default(autoincrement())
+
+  completed_onboarding Boolean @default(false)
+  email                String  @unique
+  real_name            String
+  profile_image        String
+  slack_id             String  @unique
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  accounts            Account[]
+  app_roles           AppRoleOnUser[]
+  created_meetings    Meeting[]
+  created_projects    Project[]
+  meeting_assignments MeetingParticipant[]
+  members_added       TeamMember[]         @relation("AddMember")
+  participants_added  MeetingParticipant[] @relation("AddParticipant")
+  team_assignments    TeamMember[]
+
+  @@index([slack_id])
+}
+
+enum ProjectStatus {
+  ACTIVE
+  INACTIVE
+  INDETERMINATE
+}
+
+model Project {
+  id Int @id @default(autoincrement())
+
+  created_by_id   Int
+  created_by_user User          @relation(fields: [created_by_id], references: [id])
+  meetings        Meeting[]
+  name            String
+  status          ProjectStatus @default(ACTIVE)
+  team_members    TeamMember[]
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+enum ProjectRole {
+  OWNER
+  MEMBER
+  GUEST
+}
+
+enum MemberStatus {
+  ACTIVE
+  INACTIVE
+  INDETERMINATE
+}
+
+model TeamMember {
+  user_id    Int
+  project_id Int
+
+  added_by_id Int
+  status      MemberStatus @default(ACTIVE)
+  role        ProjectRole  @default(GUEST)
+  title       String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  added_by_user User    @relation(name: "AddMember", fields: [added_by_id], references: [id])
+  member        User    @relation(fields: [user_id], references: [id])
+  project       Project @relation(fields: [project_id], references: [id])
+
+  @@id([user_id, project_id])
+}
+
+enum MeetingType {
+  ASYNC
+  SYNCHRONOUS
+}
+
+model Meeting {
+  id Int @id @default(autoincrement())
+
+  created_by_id    Int
+  duration         Int // in minutes
+  gcal_event_id    String
+  gcal_event_link  String
+  is_active        Boolean     @default(true)
+  join_url         String?
+  project_id       Int
+  rrule            String?
+  slack_channel_id String
+  start_date       DateTime
+  title            String
+  type             MeetingType
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  created_by_user User                 @relation(fields: [created_by_id], references: [id])
+  participants    MeetingParticipant[]
+  project         Project              @relation(fields: [project_id], references: [id])
+}
+
+model MeetingParticipant {
+  meeting_id Int
+  user_id    Int
+
+  added_by_id Int
+  is_active   Boolean @default(true)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  added_by_user User    @relation(name: "AddParticipant", fields: [added_by_id], references: [id])
+  meeting       Meeting @relation(fields: [meeting_id], references: [id])
+  participant   User    @relation(fields: [user_id], references: [id])
+
+  @@id([meeting_id, user_id])
+}
