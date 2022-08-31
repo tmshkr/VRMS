@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "noImplicitAny": false,
+    "esModuleInterop": true,
+    "sourceMap": true,
+    "outDir": "dist",
+    "baseUrl": "src"
+  }
+}

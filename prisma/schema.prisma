@@ -117,7 +117,7 @@ model TeamMember {
   added_by_id Int
   status      MemberStatus @default(ACTIVE)
   role        ProjectRole  @default(GUEST)
-  title       String?
+  position       String?
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
