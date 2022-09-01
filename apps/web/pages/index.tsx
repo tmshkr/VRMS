@@ -1,12 +1,10 @@
-import { Button } from "ui";
-import { bar } from "lib/foo";
+import LoginButton from "components/LoginButton";
 
 export default function Web() {
-  console.log({ bar });
   return (
     <div>
       <h1>Web</h1>
-      <Button />
+      <LoginButton />
     </div>
   );
 }
