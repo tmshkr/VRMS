@@ -29,6 +29,7 @@
     "node": ">=14.0.0"
   },
   "dependencies": {
+    "@graphql-yoga/node": "^2.13.11",
     "@prisma/client": "^4.2.1",
     "@slack/bolt": "^3.10.0",
     "agenda": "^4.2.1",
