@@ -1,5 +1,5 @@
 {
-  "name": "vrms-slackbot",
+  "name": "slackbot",
   "version": "1.0.0",
   "description": "",
   "main": "dist/index.js",
@@ -7,6 +7,10 @@
     "start": "NODE_PATH=dist node dist/index.js",
     "dev": "NODE_PATH=src nodemon src/index.ts",
     "build": "rm -rf dist && tsc -p ."
+  },
+  "dependencies": {
+    "eslint-config-custom": "*",
+    "tsconfig": "*"
   },
   "keywords": [],
   "author": "",

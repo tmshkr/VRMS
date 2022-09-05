@@ -8,9 +8,13 @@
   ],
   "scripts": {
     "build": "turbo run build",
+    "build:slackbot": "npm run build --workspace=slackbot",
+    "build:web": "npm run build --workspace=web",
     "dev": "turbo run dev --parallel",
     "lint": "turbo run lint",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\""
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "start:slackbot": "npm run start --workspace=slackbot",
+    "start:web": "npm run start --workspace=web"
   },
   "devDependencies": {
     "@mermaid-js/mermaid-cli": "^9.1.6",

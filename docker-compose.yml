@@ -1,0 +1,17 @@
+version: "3"
+
+services:
+  web:
+    container_name: web
+    build:
+      context: .
+      dockerfile: ./apps/web/Dockerfile
+    restart: always
+    ports:
+      - 3000:3000
+  slackbot:
+    container_name: slackbot
+    build:
+      context: .
+      dockerfile: ./apps/slackbot/Dockerfile
+    restart: always
