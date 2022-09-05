@@ -9,9 +9,13 @@ services:
     restart: always
     ports:
       - 3000:3000
+    env_file:
+      - .env
   slackbot:
     container_name: slackbot
     build:
       context: .
       dockerfile: ./apps/slackbot/Dockerfile
     restart: always
+    env_file:
+      - .env
