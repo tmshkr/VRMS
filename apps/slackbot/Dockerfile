@@ -11,11 +11,11 @@ FROM node:16-alpine
 WORKDIR /app
 # Copy files from the first build stage.
 COPY --from=0 /app .
-RUN PUPPETEER_SKIP_DOWNLOAD=true npm install
+RUN PUPPETEER_SKIP_DOWNLOAD=true npm ci
 
 COPY . .
 
-RUN DISABLE_ERD=true npx prisma generate
+RUN DISABLE_ERD=true npm run prisma:generate
 RUN npm run build:slackbot
 
 CMD ["npm", "run", "start:slackbot"]

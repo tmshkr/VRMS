@@ -11,9 +11,11 @@
     "build:slackbot": "npm run build --workspace=slackbot",
     "build:web": "npm run build --workspace=web",
     "dev": "turbo run dev --parallel",
-    "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "start:slackbot": "npm run start --workspace=slackbot",
+    "lint": "turbo run lint",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate deploy",
+    "start:slackbot": "npm run prisma:migrate && npm run start --workspace=slackbot",
     "start:web": "npm run start --workspace=web"
   },
   "devDependencies": {

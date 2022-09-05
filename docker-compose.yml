@@ -1,8 +1,11 @@
 version: "3"
 
 services:
+  postgres:
+    image: "postgres:latest"
+    env_file:
+      - .env
   web:
-    container_name: web
     build:
       context: .
       dockerfile: ./apps/web/Dockerfile
@@ -11,11 +14,18 @@ services:
       - 3000:3000
     env_file:
       - .env
+    environment:
+      - DATABASE_URL=postgres://postgres:${POSTGRES_PASSWORD}@postgres/vrms
+    depends_on:
+      - postgres
   slackbot:
-    container_name: slackbot
     build:
       context: .
       dockerfile: ./apps/slackbot/Dockerfile
     restart: always
     env_file:
       - .env
+    environment:
+      - DATABASE_URL=postgres://postgres:${POSTGRES_PASSWORD}@postgres/vrms
+    depends_on:
+      - postgres
