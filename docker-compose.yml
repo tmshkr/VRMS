@@ -3,6 +3,8 @@ version: "3"
 services:
   postgres:
     image: "postgres:latest"
+    env_file:
+      - .env
   web:
     build:
       context: .
