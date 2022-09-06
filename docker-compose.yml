@@ -18,7 +18,9 @@ services:
       - postgres
   web:
     image: vrms
-    pull_policy: build
+    build:
+      context: ./
+      dockerfile: ./Dockerfile
     command: npm run start:web
     restart: always
     ports:
