@@ -27,3 +27,4 @@ services:
       - DATABASE_URL=postgres://postgres:${POSTGRES_PASSWORD}@postgres/vrms
     depends_on:
       - postgres
+      - slackbot
