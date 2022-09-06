@@ -7,9 +7,6 @@ services:
       - .env
   slackbot:
     image: tmshkr/vrms:latest
-    build:
-      context: ./
-      dockerfile: ./Dockerfile
     command: npm run start:slackbot
     env_file:
       - .env
@@ -20,9 +17,6 @@ services:
       - postgres
   web:
     image: tmshkr/vrms:latest
-    build:
-      context: ./
-      dockerfile: ./Dockerfile
     command: npm run start:web
     env_file:
       - .env
