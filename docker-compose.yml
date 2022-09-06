@@ -5,22 +5,24 @@ services:
     image: "postgres:latest"
     env_file:
       - .env
-  web:
+  slackbot:
+    image: vrms
     build:
-      context: .
-      dockerfile: ./apps/web/Dockerfile
+      context: ./
+      dockerfile: ./Dockerfile
+    command: npm run start:slackbot
     restart: always
-    ports:
-      - 80:3000
     environment:
       - DATABASE_URL=postgres://postgres:${POSTGRES_PASSWORD}@postgres/vrms
     depends_on:
       - postgres
-  slackbot:
-    build:
-      context: .
-      dockerfile: ./apps/slackbot/Dockerfile
+  web:
+    image: vrms
+    pull_policy: build
+    command: npm run start:web
     restart: always
+    ports:
+      - 80:3000
     environment:
       - DATABASE_URL=postgres://postgres:${POSTGRES_PASSWORD}@postgres/vrms
     depends_on:
