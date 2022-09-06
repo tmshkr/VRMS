@@ -27,6 +27,7 @@
     "eslint-config-custom": "*",
     "prettier": "latest",
     "prisma": "^4.2.1",
+    "prisma-erd-generator": "^1.1.0",
     "turbo": "latest",
     "typescript": "^4.6.2"
   },
@@ -53,7 +54,6 @@
     "mongodb": "^4.9.0",
     "next-auth": "^4.10.3",
     "octokit": "^2.0.7",
-    "prisma-erd-generator": "^1.1.0",
     "rrule": "^2.6.4",
     "ts-node": "^10.7.0"
   },
