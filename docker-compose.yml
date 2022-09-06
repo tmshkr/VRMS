@@ -3,8 +3,6 @@ version: "3"
 services:
   postgres:
     image: "postgres:latest"
-    env_file:
-      - .env
   web:
     build:
       context: .
@@ -12,8 +10,6 @@ services:
     restart: always
     ports:
       - 3000:3000
-    env_file:
-      - .env
     environment:
       - DATABASE_URL=postgres://postgres:${POSTGRES_PASSWORD}@postgres/vrms
     depends_on:
@@ -23,8 +19,6 @@ services:
       context: .
       dockerfile: ./apps/slackbot/Dockerfile
     restart: always
-    env_file:
-      - .env
     environment:
       - DATABASE_URL=postgres://postgres:${POSTGRES_PASSWORD}@postgres/vrms
     depends_on:
