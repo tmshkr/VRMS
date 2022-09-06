@@ -8,8 +8,6 @@
   ],
   "scripts": {
     "build": "turbo run build",
-    "build:slackbot": "npm run build --workspace=slackbot",
-    "build:web": "npm run build --workspace=web",
     "dev": "turbo run dev --parallel",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "lint": "turbo run lint",
