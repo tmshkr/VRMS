@@ -1,6 +1,17 @@
 version: "3"
 
 services:
+  nginx:
+    image: jonasal/nginx-certbot:latest
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - nginx_secrets:/etc/letsencrypt
+      - ./user_conf.d:/etc/nginx/user_conf.d
   postgres:
     image: postgres:latest
     env_file:
@@ -28,3 +39,6 @@ services:
     depends_on:
       - postgres
       - slackbot
+
+volumes:
+  nginx_secrets:
