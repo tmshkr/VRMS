@@ -11,11 +11,13 @@ services:
       - 443:443
     volumes:
       - nginx_secrets:/etc/letsencrypt
-      - ./user_conf.d:/etc/nginx/user_conf.d
+      - ./nginx:/etc/nginx/user_conf.d
   postgres:
     image: postgres:latest
     env_file:
       - .env
+    volumes:
+      - pgdata:/var/lib/postgresql/data
   slackbot:
     image: tmshkr/vrms:latest
     command: npm run start:slackbot
@@ -32,8 +34,6 @@ services:
     env_file:
       - .env
     restart: always
-    ports:
-      - 5000:3000
     environment:
       - DATABASE_URL=postgres://postgres:${POSTGRES_PASSWORD}@postgres/vrms
     depends_on:
@@ -42,3 +42,4 @@ services:
 
 volumes:
   nginx_secrets:
+  pgdata:
