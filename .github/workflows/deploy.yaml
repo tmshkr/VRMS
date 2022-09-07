@@ -27,5 +27,6 @@ jobs:
           application_name: vrms
           environment_name: vrms-dev
           version_label: ${{ github.sha }}
+          version_description: ${{ github.event.head_commit.message }}
           region: us-east-2
           deployment_package: deploy.zip
