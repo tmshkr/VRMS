@@ -1,77 +1,127 @@
-# Turborepo starter with npm
+# vrms
 
-This is an official starter turborepo.
+## Overview
 
-## What's inside?
+A Slack app to help volunteers create, manage, and view projects and meetings.
 
-This turborepo uses [npm](https://www.npmjs.com/) as a package manager. It includes the following packages/apps:
+## Tech Stack
 
-### Apps and Packages
+- [MongoDB](https://github.com/mongodb/node-mongodb-native)
+- [NextJS](https://nextjs.org/)
+- [PostgreSQL](https://www.postgresql.org/)
+- [Prisma](https://www.prisma.io/)
+- [Slack Bolt](https://slack.dev/bolt-js/tutorial/getting-started)
+- [TypeScript](https://www.typescriptlang.org/)
 
-- `docs`: a [Next.js](https://nextjs.org) app
-- `web`: another [Next.js](https://nextjs.org) app
-- `ui`: a stub React component library shared by both `web` and `docs` applications
-- `eslint-config-custom`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `tsconfig`: `tsconfig.json`s used throughout the monorepo
+## Database Schema
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+![schema](/prisma/ERD.svg)
 
-### Utilities
+## API Endpoints
 
-This turborepo has some additional tools already setup for you:
+The following API endpoints are publicly available:
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
+[/api/graphql](https://vrms-staging.us-west-1.elasticbeanstalk.com/api/graphql)
 
-## Setup
+[/api/meetings](https://vrms-staging.us-west-1.elasticbeanstalk.com/api/meetings)
 
-This repository is used in the `npx create-turbo@latest` command, and selected when choosing which package manager you wish to use with your monorepo (npm).
+[/api/projects](https://vrms-staging.us-west-1.elasticbeanstalk.com/api/projects)
 
-### Build
+[/api/users](https://vrms-staging.us-west-1.elasticbeanstalk.com/api/users)
 
-To build all apps and packages, run the following command:
+## Getting Started
 
-```
-cd my-turborepo
-npm run build
-```
-
-### Develop
-
-To develop all apps and packages, run the following command:
+Once you've [forked](https://github.com/tmshkr/vrms/fork) the repository,
+clone it to your local machine and install the dependencies:
 
 ```
-cd my-turborepo
+git clone https://github.com/YOUR_USERNAME/vrms.git
+cd vrms && npm install
+```
+
+### Create your `.env` file
+
+To create your `.env` file, copy it from `.env.example`:
+
+```
+cp .env.example .env
+```
+
+### Provision your databases
+
+You'll need a Postgres database, so you can either run one locally
+or use a service like [ElephantSQL](https://www.elephantsql.com/).
+
+Provide your connection string starting with `postgres://` as the `DATABASE_URL` in your `.env`.
+
+You'll also need a MongoDB instance for task scheduling with [Agenda](https://github.com/agenda/agenda) and other document data storage.
+
+[MongoDB Cloud](https://www.mongodb.com/cloud) or a local MongoDB server
+can be used to provide your `MONGO_URI` connection string.
+
+### Create a Slack app
+
+Go to [Your Apps](https://api.slack.com/apps) and click **Create New App**.
+
+In the **Create an app** modal that appears, select **From an app manifest**.
+
+Select the workspace you want to develop your app in, and then provide the [app manifest](./slackbot/app-manifest.yaml).
+
+> Be sure to replace `YOUR-NAME` with your name so that we can tell who the app belongs to.
+
+Review the summary and click **Create**.
+
+### Slack app setup
+
+On the **Basic Information** page for your app, click **Install to Workspace**.
+
+Under the **App Credentials** heading, you can get the following environment variables:
+
+- `SLACK_CLIENT_ID`
+- `SLACK_CLIENT_SECRET`
+- `SLACK_SIGNING_SECRET`
+
+Under the **App-Level Tokens** heading, you'll need to create a token to run in [socket mode](https://api.slack.com/apis/connections/socket). Click **Generate Token and Scopes** then give the token any name, and make sure to give it the `connections:write` scope.
+
+Copy and paste the token starting with `xapp` as the `SLACK_APP_TOKEN` in your `.env`.
+
+To get the `SLACK_BOT_TOKEN`, click **OAuth & Permissions** from the sidebar under the **Features** heading.
+On that page, you'll find the **Bot User OAuth Token** starting with `xoxb`.
+
+### Sign In with GitHub
+
+Create a [New OAuth App](https://github.com/settings/developers) to allow sign in with GitHub.
+
+Provide the `GITHUB_ID` and `GITHUB_SECRET` variables in your `.env`.
+
+### Google Calendar integration
+
+The app automatically creates a Google Calendar event for new meetings using the [Calendar API](https://developers.google.com/calendar/api). To get the necessary environment variables, follow the instructions in the [Node.js quickstart](https://developers.google.com/calendar/api/quickstart/nodejs).
+
+### Migrate and seed the database
+
+Before you can use the database, you'll need to generate the Prisma client, push the schema to your database, and seed the database with users from Slack:
+
+```
+npx prisma generate
+npx prisma migrate deploy
+npx prisma db seed
+```
+
+As you make changes to the database, you can see the live data using [Prisma Studio](https://www.prisma.io/studio):
+
+```
+npx prisma studio
+```
+
+### Start the dev server
+
+Start the dev server with the following command:
+
+```
 npm run dev
 ```
 
-### Remote Caching
+You should now be able to use the app in your workspace.
 
-Turborepo can use a technique known as [Remote Caching](https://turborepo.org/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup), then enter the following commands:
-
-```
-cd my-turborepo
-npx turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your turborepo:
-
-```
-npx turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Pipelines](https://turborepo.org/docs/core-concepts/pipelines)
-- [Caching](https://turborepo.org/docs/core-concepts/caching)
-- [Remote Caching](https://turborepo.org/docs/core-concepts/remote-caching)
-- [Scoped Tasks](https://turborepo.org/docs/core-concepts/scopes)
-- [Configuration Options](https://turborepo.org/docs/reference/configuration)
-- [CLI Usage](https://turborepo.org/docs/reference/command-line-reference)
+Find it in the **Apps** sidebar and go to the Home tab to see your app's homepage.
