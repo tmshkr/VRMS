@@ -3,15 +3,19 @@ on:
   push:
     branches:
       - main
+      - staging
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - name: Get branch name
+        id: branch-name
+        uses: tj-actions/branch-names@v6
       - run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
-      - run: docker build -t tmshkr/vrms:latest .
-      - run: docker push tmshkr/vrms:latest
+      - run: docker build -t tmshkr/vrms:${{ steps.branch-name.outputs.current_branch }} .
+      - run: docker push tmshkr/vrms:${{ steps.branch-name.outputs.current_branch }}
   deploy:
     runs-on: ubuntu-latest
     needs: build
@@ -25,7 +29,7 @@ jobs:
           aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           application_name: vrms
-          environment_name: vrms-dev
+          environment_name: vrms-${{ steps.branch-name.outputs.current_branch }}
           version_label: ${{ github.sha }}
           version_description: ${{ github.event.head_commit.message }}
           region: us-west-1
