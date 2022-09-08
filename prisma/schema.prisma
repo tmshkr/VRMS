@@ -75,7 +75,7 @@ model User {
   participants_added  MeetingParticipant[] @relation("AddParticipant")
   team_assignments    TeamMember[]
 
-  @@index([slack_id])
+  @@index(slack_id)
 }
 
 enum ProjectStatus {
@@ -127,6 +127,7 @@ model TeamMember {
   project       Project @relation(fields: [project_id], references: [id])
 
   @@id([user_id, project_id])
+  @@index(user_id)
 }
 
 enum MeetingType {
@@ -173,4 +174,5 @@ model MeetingParticipant {
   participant   User    @relation(fields: [user_id], references: [id])
 
   @@id([meeting_id, user_id])
+  @@index(user_id)
 }
