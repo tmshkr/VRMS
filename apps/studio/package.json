@@ -1,0 +1,21 @@
+{
+  "name": "studio",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "NODE_PATH=dist node dist/index.js",
+    "dev": "(npx prisma studio&) && NODE_PATH=src nodemon src/index.ts",
+    "build": "rm -rf dist && tsc -p ."
+  },
+  "dependencies": {
+    "eslint-config-custom": "*",
+    "tsconfig": "*"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "prisma": {
+    "schema": "../../prisma/schema.prisma"
+  }
+}
