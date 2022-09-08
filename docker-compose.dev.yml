@@ -1,6 +1,22 @@
 version: "3"
 
 services:
+  app:
+    build:
+      dockerfile: Dockerfile.dev
+      context: ./
+    command: npm run dev
+    env_file:
+      - .env
+    restart: always
+    volumes:
+      - /app/node_modules
+      - ./:/app
+    environment:
+      - DATABASE_URL=postgres://postgres:${POSTGRES_PASSWORD}@postgres/vrms
+    depends_on:
+      - nginx
+      - postgres
   nginx:
     image: jonasal/nginx-certbot:latest
     restart: unless-stopped
@@ -18,22 +34,6 @@ services:
       - .env
     volumes:
       - pgdata:/var/lib/postgresql/data
-  app:
-    build:
-      dockerfile: Dockerfile.dev
-      context: ./
-    command: npm run dev
-    env_file:
-      - .env
-    restart: always
-    volumes:
-      - /app/node_modules
-      - ./:/app
-    environment:
-      - DATABASE_URL=postgres://postgres:${POSTGRES_PASSWORD}@postgres/vrms
-    depends_on:
-      - postgres
-      - nginx
 
 volumes:
   nginx_secrets:
