@@ -65,7 +65,7 @@ Go to [Your Apps](https://api.slack.com/apps) and click **Create New App**.
 
 In the **Create an app** modal that appears, select **From an app manifest**.
 
-Select the workspace you want to develop your app in, and then provide the [app manifest](./slackbot/app-manifest.yaml).
+Select the workspace you want to develop your app in, and then provide the [app manifest](./apps/slackbot/app-manifest.yaml).
 
 > Be sure to replace `YOUR-NAME` with your name so that we can tell who the app belongs to.
 
