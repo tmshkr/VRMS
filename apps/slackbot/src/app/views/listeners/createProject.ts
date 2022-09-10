@@ -41,6 +41,11 @@ export const createProject = async ({ ack, body, view, client, logger }) => {
               role: "OWNER",
               added_by_id: meetingCreator.id,
             };
+          } else {
+            return {
+              user_id: id,
+              added_by_id: meetingCreator.id,
+            };
           }
         }),
       },
