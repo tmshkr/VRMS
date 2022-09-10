@@ -22,6 +22,10 @@ export default function UserProfile(props) {
     const { data } = await axios.put("/api/user/readme", {
       readme: easyMDEref.current.value(),
     });
+    if (!data.readme) {
+      console.error(data);
+      throw new Error("Error updating readme");
+    }
     easyMDEref.current.toTextArea();
     setIsEditing(false);
     setUserProfile({ ...userProfile, ...data });
@@ -31,6 +35,9 @@ export default function UserProfile(props) {
 
   return (
     <div className="flex">
+      <Head>
+        <title>{userProfile.real_name} | VRMS</title>
+      </Head>
       <div>
         <img className="max-w-xs rounded-md" src={userProfile.profile_image} />
         <div className="">
@@ -83,6 +90,7 @@ export default function UserProfile(props) {
 
 export async function getServerSideProps(context) {
   const { username } = context.params;
+
   const select = {
     id: true,
     headline: true,
