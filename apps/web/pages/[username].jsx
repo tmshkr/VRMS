@@ -30,47 +30,52 @@ export default function UserProfile(props) {
   const canEdit = user?.vrms_user.id === userProfile.id;
 
   return (
-    <div>
-      <div className="flex">
-        <div>
-          <img
-            className="max-w-xs rounded-md"
-            src={userProfile.profile_image}
-          />
-          <div className="">
-            <div className="text-center child:m-0 p-3">
-              <h2 className="">{userProfile.real_name}</h2>
-              <p className="">{userProfile.headline}</p>
-            </div>
-            <p>meetings...</p>
-            <p>projects...</p>
+    <div className="flex">
+      <div>
+        <img className="max-w-xs rounded-md" src={userProfile.profile_image} />
+        <div className="">
+          <div className="text-center child:m-0 p-3">
+            <h2 className="">{userProfile.real_name}</h2>
+            <p className="">{userProfile.headline}</p>
           </div>
+          <p>projects...</p>
+          <p>meetings...</p>
         </div>
-        <div className="w-full px-4" suppressHydrationWarning>
-          {isEditing ? (
-            <>
-              <MarkdownEditor
-                easyMDEref={easyMDEref}
-                content={userProfile.readme}
-              />
-              <button className={buttonStyles} onClick={sumbitReadme}>
-                Submit
-              </button>
-            </>
-          ) : (
-            <>
-              <Markdown className="w-full">{userProfile.readme}</Markdown>
-              {canEdit && (
+      </div>
+      <div className="w-full px-4" suppressHydrationWarning>
+        {isEditing ? (
+          <>
+            <MarkdownEditor
+              easyMDEref={easyMDEref}
+              content={userProfile.readme}
+            />
+            <button className={buttonStyles} onClick={sumbitReadme}>
+              Submit
+            </button>
+          </>
+        ) : (
+          <>
+            <Markdown className="w-full">{userProfile.readme}</Markdown>
+            {canEdit && (
+              <>
                 <button
                   className={buttonStyles}
                   onClick={() => setIsEditing(true)}
                 >
                   Edit README
                 </button>
-              )}
-            </>
-          )}
-        </div>
+                <a
+                  className="ml-2"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  href="https://digital.gov/pdf/GSA-TTS_Personal-README-template.pdf"
+                >
+                  What is a personal README?
+                </a>
+              </>
+            )}
+          </>
+        )}
       </div>
     </div>
   );
