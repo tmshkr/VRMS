@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { useLocalStorage } from "hooks/useLocalStorage";
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import prisma from "lib/prisma";
 import Markdown from "marked-react";
 import { PencilAltIcon, CheckIcon } from "@heroicons/react/outline";
@@ -98,8 +99,32 @@ export default function UserProfile(props) {
               </>
             )}
           </div>
-          <p>projects...</p>
-          <p>meetings...</p>
+          <div>
+            <h3>Projects</h3>
+            <ul>
+              {userProfile.team_assignments.map(({ project }) => {
+                const { id, name } = project;
+                return (
+                  <li key={id}>
+                    <Link href={`/projects/${id}`}>{name}</Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+          <div>
+            <h3>Meetings</h3>
+            <ul>
+              {userProfile.meeting_assignments.map(({ meeting }) => {
+                const { id, title } = meeting;
+                return (
+                  <li key={id}>
+                    <Link href={`/meetings/${id}`}>{title}</Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
         </div>
       </div>
       <div className="w-full px-4" suppressHydrationWarning>
@@ -151,6 +176,12 @@ export async function getServerSideProps(context) {
     readme: true,
     real_name: true,
     username: true,
+    meeting_assignments: {
+      select: { meeting: { select: { id: true, title: true } } },
+    },
+    team_assignments: {
+      select: { project: { select: { id: true, name: true } } },
+    },
   };
   let user;
 
