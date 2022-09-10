@@ -1,5 +1,3 @@
-import LoginButton from "components/SignInButton";
-
 export default function Web() {
   return (
     <div>
