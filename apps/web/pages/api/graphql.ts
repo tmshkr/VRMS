@@ -94,6 +94,7 @@ const resolvers = {
           include: {
             member: {
               select: {
+                id: true,
                 email: false,
                 real_name: true,
                 slack_id: true,
@@ -115,6 +116,7 @@ const resolvers = {
           include: {
             participant: {
               select: {
+                id: true,
                 email: false,
                 real_name: true,
                 slack_id: true,
