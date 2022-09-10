@@ -113,6 +113,23 @@ export function Dashboard({ children }) {
                                 Admin
                               </Link>
                             </Menu.Item>
+                            {user && (
+                              <Menu.Item>
+                                {/*
+                                Using a plain a tag since the Link component seems
+                                to be having issues with navigating between profiles
+                                */}
+                                <a
+                                  href={`/${
+                                    user.vrms_user.username || user.vrms_user.id
+                                  }`}
+                                  className="block px-4 py-2 text-sm text-gray-700"
+                                >
+                                  Profile
+                                </a>
+                              </Menu.Item>
+                            )}
+
                             <Menu.Item>
                               <Link
                                 href={`/api/auth/signout`}
