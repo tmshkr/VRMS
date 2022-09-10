@@ -19,6 +19,9 @@ export const registerEvents = () => {
     if (!user.is_bot) {
       const row = {
         slack_id: user.id,
+        slack_team_id: user.team_id,
+        first_name: user.profile.first_name,
+        last_name: user.profile.last_name,
         real_name: user.real_name,
         email: user.profile.email,
         profile_image: user.profile.image_512,
