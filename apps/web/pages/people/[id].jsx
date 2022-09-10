@@ -34,16 +34,19 @@ export default function UserProfile(props) {
   const canEdit = user?.vrms_user.id === userProfile.id;
 
   return (
-    <div className="flex">
+    <div className="sm:flex">
       <Head>
         <title>{userProfile.real_name} | VRMS</title>
       </Head>
       <div>
-        <img className="max-w-xs rounded-md" src={userProfile.profile_image} />
+        <img
+          className="max-w-xs rounded-md m-auto"
+          src={userProfile.profile_image}
+        />
         <div className="">
           <div className="text-center child:m-0 p-3">
-            <h2 className="">{userProfile.real_name}</h2>
-            <p className="">{userProfile.headline}</p>
+            <h2>{userProfile.real_name}</h2>
+            <p>{userProfile.headline}</p>
           </div>
           <p>projects...</p>
           <p>meetings...</p>
