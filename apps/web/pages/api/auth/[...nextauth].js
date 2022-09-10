@@ -99,16 +99,7 @@ const nextAuthOptions = (req, res) => {
           } = account;
           const { login: gh_username, two_factor_authentication } = profile;
 
-          token.provider = provider;
-          token.provider_account_id = provider_account_id;
-          token.gh_username = gh_username;
-          token.scope = scope;
-          token.type = type;
-          token.access_token = access_token;
-          token.token_type = token_type;
-          token.two_factor_authentication = two_factor_authentication;
-
-          await prisma.account
+          const { vrms_user_id } = await prisma.account
             .update({
               where: {
                 provider_provider_account_id: { provider, provider_account_id },
@@ -152,9 +143,20 @@ const nextAuthOptions = (req, res) => {
                 console.error(err);
               }
             });
-        }
 
-        return token;
+          return {
+            ...token,
+            provider,
+            provider_account_id,
+            gh_username,
+            access_token,
+            token_type,
+            type,
+            scope,
+            two_factor_authentication,
+            vrms_user_id,
+          };
+        } else return token;
       },
     },
   };
