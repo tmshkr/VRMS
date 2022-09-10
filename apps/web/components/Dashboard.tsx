@@ -31,6 +31,7 @@ export function Dashboard({ children }) {
     { name: "Dashboard", href: "/", current: pathRoot === "/" },
     { name: "Meetings", href: "/meetings", current: pathRoot === "/meetings" },
     { name: "Projects", href: "/projects", current: pathRoot === "/projects" },
+    { name: "People", href: "/people", current: pathRoot === "/people" },
   ];
 
   useEffect(() => {
@@ -120,8 +121,9 @@ export function Dashboard({ children }) {
                                 to be having issues with navigating between profiles
                                 */}
                                 <a
-                                  href={`/${
-                                    user.vrms_user.username || user.vrms_user.id
+                                  href={`/people/${
+                                    user.vrms_user?.username ||
+                                    user.vrms_user?.id
                                   }`}
                                   className="block px-4 py-2 text-sm text-gray-700"
                                 >

@@ -89,7 +89,7 @@ export default function UserProfile(props) {
 }
 
 export async function getServerSideProps(context) {
-  const { username } = context.params;
+  const { id } = context.params;
 
   const select = {
     id: true,
@@ -102,15 +102,14 @@ export async function getServerSideProps(context) {
   let user;
 
   // URL param can be either a username or a user id
-  if (Number(username)) {
-    const id = Number(username);
+  if (Number(id)) {
     user = await prisma.user.findUnique({
-      where: { id },
+      where: { id: Number(id) },
       select,
     });
   } else {
     user = await prisma.user.findUnique({
-      where: { username },
+      where: { username: id },
       select,
     });
   }
