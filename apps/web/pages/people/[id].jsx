@@ -1,10 +1,14 @@
 import Head from "next/head";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { useLocalStorage } from "hooks/useLocalStorage";
 import dynamic from "next/dynamic";
 import prisma from "lib/prisma";
 import Markdown from "marked-react";
+import { PencilAltIcon, CheckIcon } from "@heroicons/react/outline";
+import { useForm } from "react-hook-form";
+
+// const classNames = require("classnames");
 
 const MarkdownEditor = dynamic(() => import("components/MarkdownEditor"), {
   ssr: false,
@@ -15,23 +19,41 @@ const buttonStyles =
 
 export default function UserProfile(props) {
   const easyMDEref = useRef(null);
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditingReadme, setIsEditingReadme] = useState(false);
   const [userProfile, setUserProfile] = useState(props.userProfile);
   const [user] = useLocalStorage("user");
+  const canEdit = user?.vrms_user.id === userProfile.id;
   const sumbitReadme = async () => {
-    const { data } = await axios.put("/api/user/readme", {
+    const { data } = await axios.put("/api/me", {
       readme: easyMDEref.current.value(),
     });
-    if (!data.readme) {
-      console.error(data);
-      throw new Error("Error updating readme");
-    }
+
     easyMDEref.current.toTextArea();
-    setIsEditing(false);
-    setUserProfile({ ...userProfile, ...data });
+    setIsEditingReadme(false);
+    setUserProfile(data);
   };
 
-  const canEdit = user?.vrms_user.id === userProfile.id;
+  const [isEditingHeadline, setIsEditingHeadline] = useState(false);
+  const {
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors },
+    setFocus,
+  } = useForm();
+  const onSubmitRHF = async ({ headline }) => {
+    const { data } = await axios.put("/api/me", {
+      headline,
+    });
+    setUserProfile(data);
+    setIsEditingHeadline(false);
+  };
+
+  useEffect(() => {
+    if (isEditingHeadline) {
+      setFocus("headline");
+    }
+  }, [isEditingHeadline]);
 
   return (
     <div className="sm:flex">
@@ -40,20 +62,48 @@ export default function UserProfile(props) {
       </Head>
       <div>
         <img
-          className="max-w-xs rounded-md m-auto"
+          className="max-w-full sm:max-w-xs rounded-md m-auto"
           src={userProfile.profile_image}
         />
         <div className="">
-          <div className="text-center child:m-0 p-3">
-            <h2>{userProfile.real_name}</h2>
-            <p>{userProfile.headline}</p>
+          <div className="text-center p-3" suppressHydrationWarning>
+            <h2 className="m-0">{userProfile.real_name}</h2>
+            {isEditingHeadline ? (
+              <form onSubmit={handleSubmit(onSubmitRHF)}>
+                <input
+                  className="text-center w-full"
+                  defaultValue={userProfile.headline}
+                  {...register("headline")}
+                />
+                <button
+                  className="block m-auto p-4 cursor-pointer"
+                  type="submit"
+                >
+                  <CheckIcon className="w-6" />
+                </button>
+              </form>
+            ) : (
+              <>
+                <p className="m-0">{userProfile.headline} </p>
+                {canEdit && (
+                  <button
+                    className="block m-auto p-4 cursor-pointer"
+                    onClick={() => {
+                      setIsEditingHeadline(true);
+                    }}
+                  >
+                    <PencilAltIcon className="w-6" />
+                  </button>
+                )}
+              </>
+            )}
           </div>
           <p>projects...</p>
           <p>meetings...</p>
         </div>
       </div>
       <div className="w-full px-4" suppressHydrationWarning>
-        {isEditing ? (
+        {isEditingReadme ? (
           <>
             <MarkdownEditor
               easyMDEref={easyMDEref}
@@ -70,7 +120,7 @@ export default function UserProfile(props) {
               <>
                 <button
                   className={buttonStyles}
-                  onClick={() => setIsEditing(true)}
+                  onClick={() => setIsEditingReadme(true)}
                 >
                   Edit README
                 </button>
