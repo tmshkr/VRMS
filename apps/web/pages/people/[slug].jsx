@@ -16,7 +16,7 @@ const MarkdownEditor = dynamic(() => import("components/MarkdownEditor"), {
 });
 
 const buttonStyles =
-  "inline-flex items-center rounded border border-transparent bg-indigo-600 px-2.5 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2";
+  "inline-flex items-center rounded border border-transparent bg-indigo-600 px-2.5 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 mr-2";
 
 export default function UserProfile(props) {
   const { meetings, projects } = props;
@@ -24,7 +24,7 @@ export default function UserProfile(props) {
   const [isEditingReadme, setIsEditingReadme] = useState(false);
   const [userProfile, setUserProfile] = useState(props.userProfile);
   const [user] = useLocalStorage("user");
-  const canEdit = user?.vrms_user.id === userProfile.id;
+  const canEdit = user?.vrms_user?.id === userProfile.id;
   const sumbitReadme = async () => {
     const { data } = await axios.put("/api/me", {
       readme: easyMDEref.current.value(),
@@ -141,25 +141,26 @@ export default function UserProfile(props) {
           </>
         ) : (
           <>
-            <Markdown className="w-full">{userProfile.readme}</Markdown>
+            <Markdown className="w-full">
+              {userProfile.readme ||
+                `# Hello World\nIt looks like ${userProfile.first_name} hasn't filled out their personal README yet`}
+            </Markdown>
+
             {canEdit && (
-              <>
-                <button
-                  className={buttonStyles}
-                  onClick={() => setIsEditingReadme(true)}
-                >
-                  Edit README
-                </button>
-                <a
-                  className="ml-2"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  href="https://digital.gov/pdf/GSA-TTS_Personal-README-template.pdf"
-                >
-                  What is a personal README?
-                </a>
-              </>
+              <button
+                className={buttonStyles}
+                onClick={() => setIsEditingReadme(true)}
+              >
+                Edit README
+              </button>
             )}
+            <a
+              target="_blank"
+              rel="noopener noreferrer"
+              href="https://digital.gov/pdf/GSA-TTS_Personal-README-template.pdf"
+            >
+              What is a personal README?
+            </a>
           </>
         )}
       </div>
@@ -172,6 +173,7 @@ export async function getServerSideProps(context) {
 
   const select = {
     id: true,
+    first_name: true,
     headline: true,
     profile_image: true,
     readme: true,
@@ -210,6 +212,7 @@ export async function getServerSideProps(context) {
 
   const {
     id,
+    first_name,
     headline,
     profile_image,
     readme,
@@ -224,6 +227,7 @@ export async function getServerSideProps(context) {
       userProfile: {
         id,
         headline,
+        first_name,
         profile_image,
         readme,
         real_name,
