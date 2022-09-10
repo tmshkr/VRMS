@@ -61,7 +61,12 @@ const nextAuthOptions = (req, res) => {
               },
               select: {
                 user: {
-                  select: { id: true, slack_id: true, app_roles: true },
+                  select: {
+                    id: true,
+                    slack_id: true,
+                    username: true,
+                    app_roles: true,
+                  },
                 },
               },
             })
