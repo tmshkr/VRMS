@@ -1,6 +1,7 @@
 import Head from "next/head";
 import { useRef, useState } from "react";
 import axios from "axios";
+import { useLocalStorage } from "hooks/useLocalStorage";
 import dynamic from "next/dynamic";
 import prisma from "lib/prisma";
 import Markdown from "marked-react";
@@ -15,22 +16,25 @@ const buttonStyles =
 export default function UserProfile(props) {
   const easyMDEref = useRef(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [user, setUser] = useState(props.user);
+  const [userProfile, setUserProfile] = useState(props.userProfile);
+  const [user] = useLocalStorage("user");
   const sumbitReadme = async () => {
     const { data } = await axios.put("/api/user/readme", {
       readme: easyMDEref.current.value(),
     });
     easyMDEref.current.toTextArea();
     setIsEditing(false);
-    setUser({ ...user, ...data });
+    setUserProfile({ ...userProfile, ...data });
   };
 
+  const canEdit = user?.vrms_user.id === userProfile.id;
+
   return (
-    <div>
+    <div suppressHydrationWarning>
       <div className="flex">
-        <img className="max-w-xs rounded-md" src={user.profile_image} />
+        <img className="max-w-xs rounded-md" src={userProfile.profile_image} />
         <div className="px-4">
-          <h2 className="mt-0">{user.real_name}</h2>
+          <h2 className="mt-0">{userProfile.real_name}</h2>
           <p>meetings...</p>
           <p>projects...</p>
         </div>
@@ -38,17 +42,22 @@ export default function UserProfile(props) {
 
       {isEditing ? (
         <>
-          <MarkdownEditor easyMDEref={easyMDEref} content={user.readme} />
+          <MarkdownEditor
+            easyMDEref={easyMDEref}
+            content={userProfile.readme}
+          />
           <button className={buttonStyles} onClick={sumbitReadme}>
             Submit
           </button>
         </>
       ) : (
         <>
-          <Markdown>{user.readme}</Markdown>
-          <button className={buttonStyles} onClick={() => setIsEditing(true)}>
-            Edit README
-          </button>
+          <Markdown>{userProfile.readme}</Markdown>
+          {canEdit && (
+            <button className={buttonStyles} onClick={() => setIsEditing(true)}>
+              Edit README
+            </button>
+          )}
         </>
       )}
     </div>
@@ -90,7 +99,7 @@ export async function getServerSideProps(context) {
 
   return {
     props: {
-      user,
+      userProfile: user,
     },
   };
 }

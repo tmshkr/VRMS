@@ -11,7 +11,7 @@ export default function MarkdownEditor({ easyMDEref, content }) {
         uniqueId: "user_readme",
       },
     });
-    easyMDEref.current.value(content);
+    easyMDEref.current.value(content || "");
 
     return () => {
       easyMDEref.current.cleanup();
