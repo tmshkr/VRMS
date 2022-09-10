@@ -30,36 +30,48 @@ export default function UserProfile(props) {
   const canEdit = user?.vrms_user.id === userProfile.id;
 
   return (
-    <div suppressHydrationWarning>
+    <div>
       <div className="flex">
-        <img className="max-w-xs rounded-md" src={userProfile.profile_image} />
-        <div className="px-4">
-          <h2 className="mt-0">{userProfile.real_name}</h2>
-          <p>meetings...</p>
-          <p>projects...</p>
+        <div>
+          <img
+            className="max-w-xs rounded-md"
+            src={userProfile.profile_image}
+          />
+          <div className="">
+            <div className="text-center child:m-0 p-3">
+              <h2 className="">{userProfile.real_name}</h2>
+              <p className="">{userProfile.headline}</p>
+            </div>
+            <p>meetings...</p>
+            <p>projects...</p>
+          </div>
+        </div>
+        <div className="w-full px-4" suppressHydrationWarning>
+          {isEditing ? (
+            <>
+              <MarkdownEditor
+                easyMDEref={easyMDEref}
+                content={userProfile.readme}
+              />
+              <button className={buttonStyles} onClick={sumbitReadme}>
+                Submit
+              </button>
+            </>
+          ) : (
+            <>
+              <Markdown className="w-full">{userProfile.readme}</Markdown>
+              {canEdit && (
+                <button
+                  className={buttonStyles}
+                  onClick={() => setIsEditing(true)}
+                >
+                  Edit README
+                </button>
+              )}
+            </>
+          )}
         </div>
       </div>
-
-      {isEditing ? (
-        <>
-          <MarkdownEditor
-            easyMDEref={easyMDEref}
-            content={userProfile.readme}
-          />
-          <button className={buttonStyles} onClick={sumbitReadme}>
-            Submit
-          </button>
-        </>
-      ) : (
-        <>
-          <Markdown>{userProfile.readme}</Markdown>
-          {canEdit && (
-            <button className={buttonStyles} onClick={() => setIsEditing(true)}>
-              Edit README
-            </button>
-          )}
-        </>
-      )}
     </div>
   );
 }
@@ -68,6 +80,7 @@ export async function getServerSideProps(context) {
   const { username } = context.params;
   const select = {
     id: true,
+    headline: true,
     profile_image: true,
     readme: true,
     real_name: true,
@@ -75,6 +88,7 @@ export async function getServerSideProps(context) {
   };
   let user;
 
+  // URL param can be either a username or a user id
   if (Number(username)) {
     const id = Number(username);
     user = await prisma.user.findUnique({
