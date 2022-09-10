@@ -21,7 +21,6 @@ export default function UserProfile(props) {
       readme: easyMDEref.current.value(),
     });
     easyMDEref.current.toTextArea();
-    easyMDEref.current.clearAutosavedValue();
     setIsEditing(false);
     setUser({ ...user, ...data });
   };
