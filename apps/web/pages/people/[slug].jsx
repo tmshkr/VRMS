@@ -19,6 +19,7 @@ const buttonStyles =
   "inline-flex items-center rounded border border-transparent bg-indigo-600 px-2.5 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2";
 
 export default function UserProfile(props) {
+  const { meetings, projects } = props;
   const easyMDEref = useRef(null);
   const [isEditingReadme, setIsEditingReadme] = useState(false);
   const [userProfile, setUserProfile] = useState(props.userProfile);
@@ -102,7 +103,7 @@ export default function UserProfile(props) {
           <div>
             <h3>Projects</h3>
             <ul>
-              {userProfile.team_assignments.map(({ project }) => {
+              {projects.map((project) => {
                 const { id, name } = project;
                 return (
                   <li key={id}>
@@ -115,7 +116,7 @@ export default function UserProfile(props) {
           <div>
             <h3>Meetings</h3>
             <ul>
-              {userProfile.meeting_assignments.map(({ meeting }) => {
+              {meetings.map((meeting) => {
                 const { id, title } = meeting;
                 return (
                   <li key={id}>
@@ -167,7 +168,7 @@ export default function UserProfile(props) {
 }
 
 export async function getServerSideProps(context) {
-  const { id } = context.params;
+  const { slug } = context.params;
 
   const select = {
     id: true,
@@ -183,17 +184,17 @@ export async function getServerSideProps(context) {
       select: { project: { select: { id: true, name: true } } },
     },
   };
-  let user;
 
-  // URL param can be either a username or a user id
-  if (Number(id)) {
+  // URL slug param can be either a username or a user id
+  let user;
+  if (Number(slug)) {
     user = await prisma.user.findUnique({
-      where: { id: Number(id) },
+      where: { id: Number(slug) },
       select,
     });
   } else {
     user = await prisma.user.findUnique({
-      where: { username: id },
+      where: { username: slug },
       select,
     });
   }
@@ -207,9 +208,29 @@ export async function getServerSideProps(context) {
     };
   }
 
+  const {
+    id,
+    headline,
+    profile_image,
+    readme,
+    real_name,
+    username,
+    meeting_assignments,
+    team_assignments,
+  } = user;
+
   return {
     props: {
-      userProfile: user,
+      userProfile: {
+        id,
+        headline,
+        profile_image,
+        readme,
+        real_name,
+        username,
+      },
+      meetings: meeting_assignments.map(({ meeting }) => meeting),
+      projects: team_assignments.map(({ project }) => project),
     },
   };
 }
