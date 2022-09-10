@@ -21,6 +21,7 @@ export default function UserProfile(props) {
       readme: easyMDEref.current.value(),
     });
     easyMDEref.current.toTextArea();
+    easyMDEref.current.clearAutosavedValue();
     setIsEditing(false);
     setUser({ ...user, ...data });
   };
@@ -31,14 +32,14 @@ export default function UserProfile(props) {
         <img className="max-w-xs rounded-md" src={user.profile_image} />
         <div className="px-4">
           <h2 className="mt-0">{user.real_name}</h2>
-          <p>meetings...</p>``
+          <p>meetings...</p>
           <p>projects...</p>
         </div>
       </div>
 
       {isEditing ? (
         <>
-          <MarkdownEditor easyMDEref={easyMDEref} />
+          <MarkdownEditor easyMDEref={easyMDEref} content={user.readme} />
           <button className={buttonStyles} onClick={sumbitReadme}>
             Submit
           </button>
