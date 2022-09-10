@@ -1,5 +1,5 @@
 import Head from "next/head";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import axios from "axios";
 import dynamic from "next/dynamic";
 import prisma from "lib/prisma";
@@ -9,14 +9,20 @@ const MarkdownEditor = dynamic(() => import("components/MarkdownEditor"), {
   ssr: false,
 });
 
+const buttonStyles =
+  "inline-flex items-center rounded border border-transparent bg-indigo-600 px-2.5 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2";
+
 export default function UserProfile(props) {
-  const { user } = props;
   const easyMDEref = useRef(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [user, setUser] = useState(props.user);
   const sumbitReadme = async () => {
     const { data } = await axios.put("/api/user/readme", {
       readme: easyMDEref.current.value(),
     });
-    console.log(data);
+    easyMDEref.current.toTextArea();
+    setIsEditing(false);
+    setUser({ ...user, ...data });
   };
 
   return (
@@ -29,9 +35,22 @@ export default function UserProfile(props) {
           <p>projects...</p>
         </div>
       </div>
-      <Markdown>{user.readme}</Markdown>
-      <MarkdownEditor easyMDEref={easyMDEref} />
-      <button onClick={sumbitReadme}>Submit</button>
+
+      {isEditing ? (
+        <>
+          <MarkdownEditor easyMDEref={easyMDEref} />
+          <button className={buttonStyles} onClick={sumbitReadme}>
+            Submit
+          </button>
+        </>
+      ) : (
+        <>
+          <Markdown>{user.readme}</Markdown>
+          <button className={buttonStyles} onClick={() => setIsEditing(true)}>
+            Edit README
+          </button>
+        </>
+      )}
     </div>
   );
 }

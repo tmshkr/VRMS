@@ -16,9 +16,10 @@ export default async function handler(
   }
 
   const id: any = nextToken.vrms_user_id;
-  await prisma.user.update({
+  const { readme } = await prisma.user.update({
     where: { id },
     data: { readme: req.body.readme },
+    select: { readme: true },
   });
-  res.send("OK");
+  res.send({ readme });
 }

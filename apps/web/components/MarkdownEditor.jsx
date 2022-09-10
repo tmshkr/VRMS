@@ -4,16 +4,18 @@ import "easymde/dist/easymde.min.css";
 
 export default function MarkdownEditor({ easyMDEref }) {
   useEffect(() => {
-    if (typeof navigator !== "undefined") {
-      const easyMDE = new EasyMDE({
-        element: document.getElementById("editor"),
-        autosave: {
-          enabled: true,
-          uniqueId: "user_readme",
-        },
-      });
-      easyMDEref.current = easyMDE;
-    }
+    easyMDEref.current = new EasyMDE({
+      element: document.getElementById("editor"),
+      autosave: {
+        enabled: true,
+        uniqueId: "user_readme",
+      },
+    });
+
+    return () => {
+      easyMDEref.current.cleanup();
+      easyMDEref.current = null;
+    };
   }, []);
 
   return <textarea id="editor"></textarea>;
