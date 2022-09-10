@@ -1,5 +1,4 @@
 import jwt from "jsonwebtoken";
-import Cookies from "cookies";
 import { getToken } from "next-auth/jwt";
 import { getMongoClient } from "lib/mongo";
 import prisma from "lib/prisma";
@@ -7,15 +6,9 @@ import { notifyAccountConnected } from "lib/slack";
 
 export default async function handler(req, res) {
   const nextToken = await getToken({ req });
-  const cookies = new Cookies(req, res);
 
   if (!nextToken) {
-    cookies.set("redirect_to", req.url, {
-      httpOnly: false,
-      overwrite: true,
-      sameSite: "strict",
-    });
-    res.redirect("/api/auth/signin");
+    res.redirect(`/api/auth/signin?callbackUrl=${req.url}`);
     return;
   }
 
@@ -44,7 +37,7 @@ export default async function handler(req, res) {
     );
   } catch (err) {
     console.error(err);
-    res.redirect("/api/auth/signin");
+    res.status(400).send("Invalid token");
     return;
   }
 

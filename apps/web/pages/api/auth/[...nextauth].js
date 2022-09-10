@@ -26,8 +26,9 @@ const nextAuthOptions = (req, res) => {
       async signIn(args) {
         return true;
       },
-      async redirect({ url, baseUrl }) {
-        return baseUrl;
+      async redirect(args) {
+        const { url, baseUrl } = args;
+        return url;
       },
       async session(args) {
         const { session, token } = args;
@@ -61,7 +62,12 @@ const nextAuthOptions = (req, res) => {
               },
               select: {
                 user: {
-                  select: { id: true, slack_id: true, app_roles: true },
+                  select: {
+                    id: true,
+                    slack_id: true,
+                    username: true,
+                    app_roles: true,
+                  },
                 },
               },
             })
@@ -102,10 +108,10 @@ const nextAuthOptions = (req, res) => {
           token.provider = provider;
           token.provider_account_id = provider_account_id;
           token.gh_username = gh_username;
-          token.scope = scope;
-          token.type = type;
           token.access_token = access_token;
           token.token_type = token_type;
+          token.type = type;
+          token.scope = scope;
           token.two_factor_authentication = two_factor_authentication;
 
           await prisma.account
