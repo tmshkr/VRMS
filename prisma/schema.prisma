@@ -24,7 +24,7 @@ model AppRoleOnUser {
   role    AppRole
 
   created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  updated_at DateTime @default(now()) @updatedAt
 
   user User @relation(fields: [user_id], references: [id])
 
@@ -37,7 +37,7 @@ model Account {
 
   access_token              String  @db.Text
   email                     String
-  gh_username               String
+  gh_username               String?
   name                      String
   scope                     String
   token_type                String
@@ -46,7 +46,7 @@ model Account {
   vrms_user_id              Int
 
   created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  updated_at DateTime @default(now()) @updatedAt
 
   user User @relation(fields: [vrms_user_id], references: [id], onDelete: Cascade)
 
@@ -59,12 +59,16 @@ model User {
 
   completed_onboarding Boolean @default(false)
   email                String  @unique
+  first_name           String
+  last_name            String
   real_name            String
   profile_image        String
   slack_id             String  @unique
+  slack_team_id        String
+  username             String? @unique
 
   created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  updated_at DateTime @default(now()) @updatedAt
 
   accounts            Account[]
   app_roles           AppRoleOnUser[]
@@ -95,7 +99,7 @@ model Project {
   team_members    TeamMember[]
 
   created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  updated_at DateTime @default(now()) @updatedAt
 }
 
 enum ProjectRole {
@@ -117,10 +121,10 @@ model TeamMember {
   added_by_id Int
   status      MemberStatus @default(ACTIVE)
   role        ProjectRole  @default(MEMBER)
-  position       String?
+  position    String?
 
   created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  updated_at DateTime @default(now()) @updatedAt
 
   added_by_user User    @relation(name: "AddMember", fields: [added_by_id], references: [id])
   member        User    @relation(fields: [user_id], references: [id])
@@ -152,7 +156,7 @@ model Meeting {
   type             MeetingType
 
   created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  updated_at DateTime @default(now()) @updatedAt
 
   created_by_user User                 @relation(fields: [created_by_id], references: [id])
   participants    MeetingParticipant[]
@@ -167,7 +171,7 @@ model MeetingParticipant {
   is_active   Boolean @default(true)
 
   created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  updated_at DateTime @default(now()) @updatedAt
 
   added_by_user User    @relation(name: "AddParticipant", fields: [added_by_id], references: [id])
   meeting       Meeting @relation(fields: [meeting_id], references: [id])
