@@ -35,7 +35,7 @@ jobs:
           aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           application_name: vrms
           environment_name: vrms-${{ steps.branch-name.outputs.current_branch }}
-          version_label: ${{ github.sha }}
+          version_label: ${{ steps.branch-name.outputs.current_branch }}-${{ github.sha }}
           version_description: ${{ github.event.head_commit.message }}
           region: us-west-1
           deployment_package: deploy.zip
