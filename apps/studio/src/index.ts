@@ -17,11 +17,22 @@ app.use([/^\/$/, "/api"], async (req, res, next) => {
   const cookieName = process.env.NEXTAUTH_URL?.startsWith("https://")
     ? "__Secure-next-auth.session-token"
     : "next-auth.session-token";
-  const token = cookies.get(cookieName);
-  const payload: any = await decode({
-    token,
-    secret: process.env.NEXTAUTH_SECRET,
-  });
+
+  try {
+    const token = cookies.get(cookieName);
+    var payload: any = await decode({
+      token,
+      secret: process.env.NEXTAUTH_SECRET,
+    });
+    if (!payload) {
+      console.log({ token });
+      throw new Error("No payload");
+    }
+  } catch (err) {
+    console.log(err);
+    res.status(401).send("Unauthorized");
+    return;
+  }
 
   const { provider, provider_account_id } = payload;
   const app_roles: any = await prisma.account
