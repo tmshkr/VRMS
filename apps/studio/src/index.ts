@@ -11,8 +11,7 @@ const Cookies = require("cookies");
 const app = express();
 const port = 5000;
 
-// check for role on / and /api routes
-app.use([/^\/$/, "/api"], async (req, res, next) => {
+app.use(async (req, res, next) => {
   const cookies = new Cookies(req, res);
   const cookieName = process.env.NEXTAUTH_URL?.startsWith("https://")
     ? "__Secure-next-auth.session-token"
@@ -24,6 +23,7 @@ app.use([/^\/$/, "/api"], async (req, res, next) => {
       token,
       secret: process.env.NEXTAUTH_SECRET,
     });
+
     if (!payload) {
       console.log({ token });
       throw new Error("No payload");
