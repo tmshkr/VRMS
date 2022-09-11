@@ -1,4 +1,5 @@
 import prisma from "lib/prisma";
+import { getMongoClient } from "lib/mongo";
 import { withUser } from "lib/withUser";
 
 async function handler(req, res) {
@@ -24,12 +25,15 @@ async function handler(req, res) {
       });
     }
     if (readme) {
-      await prisma.user.update({
-        where: {
-          id: vrms_user.id,
-        },
-        data: { readme },
-      });
+      const mongoClient = await getMongoClient();
+      mongoClient
+        .db()
+        .collection("userReadmes")
+        .updateOne(
+          { user_id: vrms_user.id },
+          { $set: { readme } },
+          { upsert: true }
+        );
     }
 
     res.send({ success: true });

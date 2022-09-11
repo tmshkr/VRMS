@@ -5,6 +5,7 @@ import { useLocalStorage } from "hooks/useLocalStorage";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import prisma from "lib/prisma";
+import { getMongoClient } from "lib/mongo";
 import Markdown from "marked-react";
 import { PencilAltIcon, CheckIcon } from "@heroicons/react/outline";
 import { useForm } from "react-hook-form";
@@ -14,7 +15,7 @@ const MarkdownEditor = dynamic(() => import("components/MarkdownEditor"), {
 });
 
 const buttonStyles =
-  "inline-flex items-center rounded border border-transparent bg-indigo-600 px-2.5 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 mr-2";
+  "inline-flex items-center rounded border border-transparent bg-indigo-600 px-2.5 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2";
 
 export default function UserProfile(props) {
   const { meetings, projects } = props;
@@ -147,10 +148,18 @@ export default function UserProfile(props) {
             </button>
             <button
               onClick={cancelReadmeChanges}
-              className="inline-flex items-center rounded border border-transparent bg-indigo-100 px-2.5 py-1.5 text-xs font-medium text-indigo-700 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+              className="inline-flex items-center rounded border border-transparent bg-indigo-100 px-2.5 py-1.5 text-xs font-medium text-indigo-700 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ml-2"
             >
               Cancel
             </button>
+            <a
+              target="_blank"
+              className="block md:inline-block md:ml-2 my-2"
+              rel="noopener noreferrer"
+              href="https://digital.gov/pdf/GSA-TTS_Personal-README-template.pdf"
+            >
+              What is a personal README?
+            </a>
           </>
         ) : (
           <>
@@ -169,7 +178,7 @@ export default function UserProfile(props) {
             )}
             <a
               target="_blank"
-              className="block my-2"
+              className="block sm:inline-block sm:ml-2 my-2"
               rel="noopener noreferrer"
               href="https://digital.gov/pdf/GSA-TTS_Personal-README-template.pdf"
             >
@@ -190,7 +199,6 @@ export async function getServerSideProps(context) {
     first_name: true,
     headline: true,
     profile_image: true,
-    readme: true,
     real_name: true,
     username: true,
     meeting_assignments: {
@@ -229,12 +237,17 @@ export async function getServerSideProps(context) {
     first_name,
     headline,
     profile_image,
-    readme,
     real_name,
     username,
     meeting_assignments,
     team_assignments,
   } = user;
+
+  const mongoClient = await getMongoClient();
+  const { readme } = await mongoClient
+    .db()
+    .collection("userReadmes")
+    .findOne({ user_id: user.id });
 
   return {
     props: {
