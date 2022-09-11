@@ -1,20 +1,9 @@
-// Next.js API route support: https://nextjs.org/docs/api-routes/introduction
-import type { NextApiRequest, NextApiResponse } from "next";
-import { getToken } from "next-auth/jwt";
 import prisma from "lib/prisma";
+import { withUser } from "lib/withUser";
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
+async function handler(req, res) {
   if (req.method !== "PUT") {
     res.status(405).send("Method not allowed");
-    return;
-  }
-
-  const nextToken: any = await getToken({ req });
-  if (!nextToken) {
-    res.status(401).json({ message: "Unauthorized" });
     return;
   }
 
@@ -24,30 +13,31 @@ export default async function handler(
     return;
   }
 
-  const { provider, provider_account_id } = nextToken;
-  const result = await prisma.account
-    .update({
-      where: {
-        provider_provider_account_id: {
-          provider,
-          provider_account_id,
+  const { vrms_user } = req;
+  try {
+    if (headline) {
+      await prisma.user.update({
+        where: {
+          id: vrms_user.id,
         },
-      },
-      data: { user: { update: { readme, headline } } },
-      select: {
-        user: {
-          select: {
-            id: true,
-            headline: true,
-            profile_image: true,
-            readme: true,
-            real_name: true,
-            username: true,
-          },
+        data: { headline },
+      });
+    }
+    if (readme) {
+      await prisma.user.update({
+        where: {
+          id: vrms_user.id,
         },
-      },
-    })
-    .then(({ user }) => user);
+        data: { readme },
+      });
+    }
 
-  res.send(result);
+    res.send({ success: true });
+  } catch (err) {
+    res
+      .status(500)
+      .send({ errorMessage: "There was a problem updating your profile" });
+  }
 }
+
+export default withUser(handler);

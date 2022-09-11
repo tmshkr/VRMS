@@ -12,11 +12,6 @@ export default function MarkdownEditor({ easyMDEref, content }) {
       },
     });
     easyMDEref.current.value(content || "");
-
-    return () => {
-      easyMDEref.current.cleanup();
-      easyMDEref.current = null;
-    };
   }, []);
 
   return <textarea id="editor"></textarea>;

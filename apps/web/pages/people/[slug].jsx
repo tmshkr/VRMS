@@ -9,8 +9,6 @@ import Markdown from "marked-react";
 import { PencilAltIcon, CheckIcon } from "@heroicons/react/outline";
 import { useForm } from "react-hook-form";
 
-// const classNames = require("classnames");
-
 const MarkdownEditor = dynamic(() => import("components/MarkdownEditor"), {
   ssr: false,
 });
@@ -25,14 +23,25 @@ export default function UserProfile(props) {
   const [userProfile, setUserProfile] = useState(props.userProfile);
   const [user] = useLocalStorage("user");
   const canEdit = user?.vrms_user?.id === userProfile.id;
-  const sumbitReadme = async () => {
-    const { data } = await axios.put("/api/me", {
-      readme: easyMDEref.current.value(),
-    });
+
+  const saveReadme = async () => {
+    const readme = easyMDEref.current.value();
+    await axios.put("/api/me", { readme });
 
     easyMDEref.current.toTextArea();
+    easyMDEref.current.cleanup();
+    easyMDEref.current = null;
+
+    setUserProfile({ ...userProfile, readme });
     setIsEditingReadme(false);
-    setUserProfile(data);
+  };
+
+  const cancelReadmeChanges = () => {
+    easyMDEref.current.toTextArea();
+    easyMDEref.current.cleanup();
+    easyMDEref.current = null;
+
+    setIsEditingReadme(false);
   };
 
   const [isEditingHeadline, setIsEditingHeadline] = useState(false);
@@ -44,10 +53,8 @@ export default function UserProfile(props) {
     setFocus,
   } = useForm();
   const onSubmitRHF = async ({ headline }) => {
-    const { data } = await axios.put("/api/me", {
-      headline,
-    });
-    setUserProfile(data);
+    await axios.put("/api/me", { headline });
+    setUserProfile({ ...userProfile, headline });
     setIsEditingHeadline(false);
   };
 
@@ -135,8 +142,14 @@ export default function UserProfile(props) {
               easyMDEref={easyMDEref}
               content={userProfile.readme}
             />
-            <button className={buttonStyles} onClick={sumbitReadme}>
-              Submit
+            <button className={buttonStyles} onClick={saveReadme}>
+              Save
+            </button>
+            <button
+              onClick={cancelReadmeChanges}
+              className="inline-flex items-center rounded border border-transparent bg-indigo-100 px-2.5 py-1.5 text-xs font-medium text-indigo-700 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+            >
+              Cancel
             </button>
           </>
         ) : (
@@ -156,6 +169,7 @@ export default function UserProfile(props) {
             )}
             <a
               target="_blank"
+              className="block my-2"
               rel="noopener noreferrer"
               href="https://digital.gov/pdf/GSA-TTS_Personal-README-template.pdf"
             >
