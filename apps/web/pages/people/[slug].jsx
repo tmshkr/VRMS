@@ -244,10 +244,13 @@ export async function getServerSideProps(context) {
   } = user;
 
   const mongoClient = await getMongoClient();
-  const { readme } = await mongoClient
+  const readme = await mongoClient
     .db()
     .collection("userReadmes")
-    .findOne({ user_id: user.id });
+    .findOne({ user_id: user.id })
+    .then((data) => {
+      return data?.readme || "";
+    });
 
   return {
     props: {
