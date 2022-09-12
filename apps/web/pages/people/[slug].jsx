@@ -5,7 +5,7 @@ import { useLocalStorage } from "hooks/useLocalStorage";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import prisma from "lib/prisma";
-import { getMongoClient } from "lib/mongo";
+import { UserProfile } from "common/mongoose/models/UserProfile";
 import Markdown from "marked-react";
 import { PencilAltIcon, CheckIcon } from "@heroicons/react/outline";
 import { useForm } from "react-hook-form";
@@ -17,13 +17,13 @@ const MarkdownEditor = dynamic(() => import("components/MarkdownEditor"), {
 const buttonStyles =
   "inline-flex items-center rounded border border-transparent bg-indigo-600 px-2.5 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2";
 
-export default function UserProfile(props) {
+export default function ProfilePage(props) {
   const { meetings, projects } = props;
   const easyMDEref = useRef(null);
   const [isEditingReadme, setIsEditingReadme] = useState(false);
-  const [userProfile, setUserProfile] = useState(props.userProfile);
+  const [profile, setProfile] = useState(props.profile);
   const [user] = useLocalStorage("user");
-  const canEdit = user?.vrms_user?.id === userProfile.id;
+  const canEdit = user?.vrms_user?.id === profile.id;
 
   const saveReadme = async () => {
     const readme = easyMDEref.current.value();
@@ -33,7 +33,7 @@ export default function UserProfile(props) {
     easyMDEref.current.cleanup();
     easyMDEref.current = null;
 
-    setUserProfile({ ...userProfile, readme });
+    setProfile({ ...profile, readme });
     setIsEditingReadme(false);
   };
 
@@ -55,7 +55,7 @@ export default function UserProfile(props) {
   } = useForm();
   const onSubmitRHF = async ({ headline }) => {
     await axios.put("/api/me", { headline });
-    setUserProfile({ ...userProfile, headline });
+    setProfile({ ...profile, headline });
     setIsEditingHeadline(false);
   };
 
@@ -68,21 +68,21 @@ export default function UserProfile(props) {
   return (
     <div className="sm:flex">
       <Head>
-        <title>{userProfile.real_name} | VRMS</title>
+        <title>{profile.real_name} | VRMS</title>
       </Head>
       <div>
         <img
           className="max-w-full sm:max-w-xs rounded-md m-auto"
-          src={userProfile.profile_image}
+          src={profile.profile_image}
         />
         <div className="">
           <div className="text-center p-3" suppressHydrationWarning>
-            <h2 className="m-0">{userProfile.real_name}</h2>
+            <h2 className="m-0">{profile.real_name}</h2>
             {isEditingHeadline ? (
               <form onSubmit={handleSubmit(onSubmitRHF)}>
                 <input
                   className="text-center w-full"
-                  defaultValue={userProfile.headline}
+                  defaultValue={profile.headline}
                   {...register("headline")}
                 />
                 <button
@@ -94,7 +94,7 @@ export default function UserProfile(props) {
               </form>
             ) : (
               <>
-                <p className="m-0">{userProfile.headline} </p>
+                <p className="m-0">{profile.headline} </p>
                 {canEdit && (
                   <button
                     className="block m-auto p-4 cursor-pointer"
@@ -139,10 +139,7 @@ export default function UserProfile(props) {
       <div className="w-full px-4" suppressHydrationWarning>
         {isEditingReadme ? (
           <>
-            <MarkdownEditor
-              easyMDEref={easyMDEref}
-              content={userProfile.readme}
-            />
+            <MarkdownEditor easyMDEref={easyMDEref} content={profile.readme} />
             <button className={buttonStyles} onClick={saveReadme}>
               Save
             </button>
@@ -164,8 +161,8 @@ export default function UserProfile(props) {
         ) : (
           <>
             <Markdown className="w-full">
-              {userProfile.readme ||
-                `# Hello World\nIt looks like ${userProfile.first_name} hasn't filled out their personal README yet`}
+              {profile.readme ||
+                `# Hello World\nIt looks like ${profile.first_name} hasn't filled out their personal README yet`}
             </Markdown>
 
             {canEdit && (
@@ -197,7 +194,6 @@ export async function getServerSideProps(context) {
   const select = {
     id: true,
     first_name: true,
-    headline: true,
     profile_image: true,
     real_name: true,
     username: true,
@@ -235,7 +231,6 @@ export async function getServerSideProps(context) {
   const {
     id,
     first_name,
-    headline,
     profile_image,
     real_name,
     username,
@@ -243,23 +238,16 @@ export async function getServerSideProps(context) {
     team_assignments,
   } = user;
 
-  const mongoClient = await getMongoClient();
-  const readme = await mongoClient
-    .db()
-    .collection("userReadmes")
-    .findOne({ user_id: user.id })
-    .then((data) => {
-      return data?.readme || "";
-    });
+  const doc = await UserProfile.findById(user.id);
 
   return {
     props: {
-      userProfile: {
+      profile: {
         id,
-        headline,
+        headline: doc?.headline || "",
         first_name,
         profile_image,
-        readme,
+        readme: doc?.readme || "",
         real_name,
         username,
       },
