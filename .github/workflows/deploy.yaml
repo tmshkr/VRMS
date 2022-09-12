@@ -15,9 +15,6 @@ jobs:
         uses: tj-actions/branch-names@v6
       - run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
       - run: docker build -t tmshkr/vrms:${{ steps.branch-name.outputs.current_branch }} .
-        env:
-          ENVIRONMENT: ${{ steps.branch-name.outputs.current_branch }}
-          MONGO_URI: ${{ secrets.MONGO_URI }}
       - run: docker push tmshkr/vrms:${{ steps.branch-name.outputs.current_branch }}
   deploy:
     runs-on: ubuntu-latest
