@@ -1,5 +1,6 @@
-import { UserProfile } from "common/mongoose/models/UserProfile";
+import { getMongoClient } from "lib/mongo";
 import { withUser } from "lib/withUser";
+import { removeEmpty } from "common/utils/object";
 
 async function handler(req, res) {
   switch (req.method) {
@@ -28,13 +29,19 @@ async function handlePut(req, res) {
     return;
   }
 
+  console.log({ readme, headline });
+
   try {
     const { vrms_user } = req;
-    const doc = await UserProfile.findOneAndUpdate(
-      { _id: vrms_user.id },
-      { headline, readme },
-      { upsert: true }
-    );
+    const mongoClient = await getMongoClient();
+    await mongoClient
+      .db()
+      .collection("userProfiles")
+      .updateOne(
+        { _id: vrms_user.id },
+        { $set: removeEmpty({ readme, headline }) },
+        { upsert: true }
+      );
 
     res.status(200).json({ success: true });
     return;

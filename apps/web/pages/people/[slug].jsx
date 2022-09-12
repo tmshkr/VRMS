@@ -5,7 +5,7 @@ import { useLocalStorage } from "hooks/useLocalStorage";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import prisma from "lib/prisma";
-import { UserProfile } from "common/mongoose/models/UserProfile";
+import { getMongoClient } from "lib/mongo";
 import Markdown from "marked-react";
 import { PencilAltIcon, CheckIcon } from "@heroicons/react/outline";
 import { useForm } from "react-hook-form";
@@ -238,7 +238,12 @@ export async function getServerSideProps(context) {
     team_assignments,
   } = user;
 
-  const doc = await UserProfile.findById(user.id);
+  const mongoClient = await getMongoClient();
+  const doc = await mongoClient
+    .db()
+    .collection("userProfiles")
+    .findOne({ _id: user.id });
+  console.log(doc);
 
   return {
     props: {
