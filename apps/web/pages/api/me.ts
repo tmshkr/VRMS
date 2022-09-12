@@ -2,21 +2,11 @@ import { getMongoClient } from "lib/mongo";
 import { withUser } from "lib/withUser";
 import { removeEmpty } from "common/utils/object";
 
-async function handler(req, res) {
-  switch (req.method) {
-    case "GET":
-      handleGet(req, res);
-      break;
-    case "PUT":
-      handlePut(req, res);
-      break;
-    default:
-      res.status(405).send("Method not allowed");
-      return;
-  }
-}
+import type { NextApiRequest, NextApiResponse } from "next";
+import { createRouter } from "next-connect";
 
-export default withUser(handler);
+const router = createRouter<NextApiRequest, NextApiResponse>();
+router.use(withUser).get(handleGet).put(handlePut);
 
 async function handleGet(req, res) {
   return res.json({ user: req.vrms_user });
@@ -52,3 +42,13 @@ async function handlePut(req, res) {
       .send({ errorMessage: "There was a problem updating your profile" });
   }
 }
+
+export default router.handler({
+  onError: (err: any, req, res) => {
+    console.error(err.stack);
+    res.status(500).end("Something broke!");
+  },
+  onNoMatch: (req, res) => {
+    res.status(404).end("Page is not found");
+  },
+});
