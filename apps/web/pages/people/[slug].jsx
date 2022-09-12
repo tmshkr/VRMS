@@ -243,7 +243,6 @@ export async function getServerSideProps(context) {
     .db()
     .collection("userProfiles")
     .findOne({ _id: user.id });
-  console.log(doc);
 
   return {
     props: {

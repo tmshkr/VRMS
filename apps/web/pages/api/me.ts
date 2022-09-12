@@ -29,8 +29,6 @@ async function handlePut(req, res) {
     return;
   }
 
-  console.log({ readme, headline });
-
   try {
     const { vrms_user } = req;
     const mongoClient = await getMongoClient();
@@ -39,7 +37,10 @@ async function handlePut(req, res) {
       .collection("userProfiles")
       .updateOne(
         { _id: vrms_user.id },
-        { $set: removeEmpty({ readme, headline }) },
+        {
+          $set: removeEmpty({ readme, headline, updatedAt: new Date() }),
+          $setOnInsert: { createdAt: new Date() },
+        },
         { upsert: true }
       );
 
