@@ -2,7 +2,7 @@ version: "3"
 
 services:
   app:
-    image: tmshkr/vrms:${BRANCH_NAME}
+    image: tmshkr/vrms:${ENVIRONMENT}
     command: npm run start
     env_file:
       - .env
