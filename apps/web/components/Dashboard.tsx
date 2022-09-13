@@ -26,8 +26,6 @@ declare var document: any;
 
 export function Dashboard({ children }) {
   const router = useRouter();
-  const { data: session, status } = useSession();
-  const dispatch = useAppDispatch();
   const user = useAppSelector(selectUser);
 
   const pathRoot = getPathRoot(router.pathname);
@@ -37,18 +35,6 @@ export function Dashboard({ children }) {
     { name: "Projects", href: "/projects", current: pathRoot === "/projects" },
     { name: "People", href: "/people", current: pathRoot === "/people" },
   ];
-
-  useEffect(() => {
-    if (status === "authenticated") {
-      dispatch(fetchUser(session.user));
-
-      // if (!user.onboarding_complete) {
-      //   router.push("/onboard");
-      // }
-    } else if (status === "unauthenticated") {
-      dispatch(clearUser());
-    }
-  }, [status]);
 
   return (
     <>
