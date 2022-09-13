@@ -1,22 +1,27 @@
 import "../styles/globals.scss";
 import { SessionProvider } from "next-auth/react";
 import { useSession } from "next-auth/react";
+import { Provider } from "react-redux";
 import { Dashboard } from "components/Dashboard";
+
+import store from "src/store";
 
 // Use of the <SessionProvider> is mandatory to allow components that call
 // `useSession()` anywhere in your application to access the `session` object.
 export default function App({ Component, pageProps }) {
   return (
     <SessionProvider session={pageProps.session} refetchInterval={0}>
-      <Dashboard>
-        {Component.auth ? (
-          <Auth pageAuth={Component.auth}>
+      <Provider store={store}>
+        <Dashboard>
+          {Component.auth ? (
+            <Auth pageAuth={Component.auth}>
+              <Component {...pageProps} />
+            </Auth>
+          ) : (
             <Component {...pageProps} />
-          </Auth>
-        ) : (
-          <Component {...pageProps} />
-        )}
-      </Dashboard>
+          )}
+        </Dashboard>
+      </Provider>
     </SessionProvider>
   );
 }
