@@ -84,7 +84,7 @@ export const OnboardingChecklist = () => {
 
   return (
     <>
-      <p className="text-center">Here's your onboarding checklist:</p>
+      <p className="text-center">Here&apos;s your onboarding checklist:</p>
       <fieldset className="space-y-5 w-fit m-auto">
         <ChecklistItem
           checked={two_factor_authentication}
@@ -118,11 +118,11 @@ export const OnboardingChecklist = () => {
                 <a
                   href={SLACK_INVITE_LINK}
                   target="_blank"
-                  rel="noopener noreferer"
+                  rel="noopener noreferrer"
                 >
                   Join us on Slack
                 </a>{" "}
-                if you haven't already
+                if you haven&apos;t already
               </>
             )
           }
@@ -138,7 +138,7 @@ export const OnboardingChecklist = () => {
               <a
                 href="https://github.com/hackforla/codeofconduct"
                 target="_blank"
-                rel="noopener noreferer"
+                rel="noopener noreferrer"
               >
                 Code of Conduct
               </a>
@@ -148,7 +148,7 @@ export const OnboardingChecklist = () => {
         />
       </fieldset>
       <Modal {...{ isModalOpen, closeModal }}>
-        <p className="text-center">What's the magic word?</p>
+        <p className="text-center">What&apos;s the magic word?</p>
         <form onSubmit={handleSubmit(onSubmit)}>
           <input
             {...register("magic_word", {
