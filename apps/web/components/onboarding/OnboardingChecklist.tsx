@@ -1,3 +1,4 @@
+import axios from "axios";
 import { ChangeEventHandler, useEffect, useState } from "react";
 import Link from "next/link";
 import Confetti from "react-confetti";
@@ -16,8 +17,16 @@ const buttonStyles =
   "block m-auto mt-4 items-center rounded border border-transparent bg-indigo-600 px-2.5 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2";
 
 export const OnboardingChecklist = () => {
+  const user = useAppSelector(selectUser);
+  const { two_factor_authentication, slack_id, completed_onboarding } =
+    user || {};
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [agreedToCoC, setAgreedToCoC] = useState(false);
+  const checklistComplete =
+    two_factor_authentication &&
+    !!slack_id &&
+    (agreedToCoC || completed_onboarding);
+
   const closeModal = () => {
     setIsModalOpen(false);
   };
@@ -52,13 +61,13 @@ export const OnboardingChecklist = () => {
     }
   }, [isModalOpen]);
 
-  const user = useAppSelector(selectUser);
+  useEffect(() => {
+    if (checklistComplete) {
+      axios.put("/api/me/onboard");
+    }
+  }, [checklistComplete]);
+
   if (!user) return null;
-  const { two_factor_authentication, slack_id } = user;
-
-  const checklistComplete =
-    two_factor_authentication && !!slack_id && agreedToCoC;
-
   if (checklistComplete) {
     return (
       <div className="text-center px-8 rounded-md m-auto mt-12 bg-indigo-100 border border-indigo-500 max-w-fit shadow-md">
