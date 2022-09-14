@@ -2,6 +2,9 @@ import { ChangeEventHandler } from "react";
 import { useAppSelector } from "src/store";
 import { selectUser } from "src/store/user";
 
+const SLACK_APP_ID = process.env.NEXT_PUBLIC_SLACK_APP_ID;
+const SLACK_TEAM_ID = process.env.NEXT_PUBLIC_SLACK_TEAM_ID;
+
 export const OnboardingChecklist = () => {
   const user = useAppSelector(selectUser);
   if (!user) return null;
@@ -12,7 +15,17 @@ export const OnboardingChecklist = () => {
       <ChecklistItem
         checked={!!slack_id}
         name="connect-slack"
-        label="Connect your account to Slack in the Home tab"
+        label={
+          <>
+            Connect your account to Slack in the{" "}
+            <a
+              href={`slack://app?team=${SLACK_TEAM_ID}&id=${SLACK_APP_ID}&tab=home
+        `}
+            >
+              Home tab
+            </a>
+          </>
+        }
         description={
           !!slack_id
             ? "Your Slack account is connected"
