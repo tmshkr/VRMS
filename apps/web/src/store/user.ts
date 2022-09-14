@@ -38,6 +38,10 @@ export const userSlice = createSlice({
       .addCase(fetchUser.fulfilled, (state, action) => {
         state.status = "succeeded";
         state.value = action.payload;
+      })
+      .addCase(fetchUser.rejected, (state) => {
+        state.status = "failed";
+        state.value = null;
       });
   },
 });
@@ -54,12 +58,16 @@ export default userSlice.reducer;
 export const fetchUser = createAsyncThunk(
   "user/fetchUserStatus",
   async (session: any) => {
-    const user = await axios
+    return axios
       .get("/api/me")
-      .then(({ data }) => data.user)
-      .catch((err) => console.log(err));
-    console.log(user);
-    // The value we return becomes the `fulfilled` action payload
-    return { ...session, ...user };
+      .then(({ data }) => {
+        const { user } = data;
+        return { ...session, ...user };
+      })
+      .catch((err) => {
+        if (err.response.status === 404) {
+          return { ...session, unconnectedAccount: true };
+        } else throw new Error("There was a problem getting the user");
+      });
   }
 );
