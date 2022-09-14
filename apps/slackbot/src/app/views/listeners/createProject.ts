@@ -8,7 +8,7 @@ export const createProject = async ({ ack, body, view, client, logger }) => {
   const values = getInnerValues(view.state.values);
   const { new_project_title, team_members } = values;
 
-  const meetingCreator = await prisma.user
+  const projectCreator = await prisma.user
     .findUnique({
       where: { slack_id: body.user.id },
       select: { id: true },
@@ -32,19 +32,19 @@ export const createProject = async ({ ack, body, view, client, logger }) => {
   await prisma.project.create({
     data: {
       name: new_project_title.value,
-      created_by_id: meetingCreator.id,
+      created_by_id: projectCreator.id,
       team_members: {
         create: members.map(({ id, slack_id }) => {
           if (slack_id === body.user.id) {
             return {
               user_id: id,
               role: "OWNER",
-              added_by_id: meetingCreator.id,
+              added_by_id: projectCreator.id,
             };
           } else {
             return {
               user_id: id,
-              added_by_id: meetingCreator.id,
+              added_by_id: projectCreator.id,
             };
           }
         }),
