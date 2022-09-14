@@ -66,6 +66,8 @@ function Auth({ pageAuth, children }) {
     return <h1 className="mt-12 text-center">Loading...</h1>;
   }
 
+  // if there are no allowedRoles specified,
+  // then only require that the user be logged in
   if (!allowedRoles) {
     return children;
   }

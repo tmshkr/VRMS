@@ -17,6 +17,7 @@ const OnboardPage = () => {
   );
 };
 
+// the user must be logged in to access this page
 OnboardPage.auth = {};
 
 export default OnboardPage;
