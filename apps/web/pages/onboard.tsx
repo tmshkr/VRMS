@@ -11,7 +11,6 @@ const OnboardPage = () => {
       </Head>
 
       <h1 className="text-center">Welcome to Hack for LA! 🎉</h1>
-      <p className="text-center">Here's your onboarding checklist:</p>
       <OnboardingChecklist />
     </>
   );

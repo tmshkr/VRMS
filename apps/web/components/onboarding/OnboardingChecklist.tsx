@@ -1,4 +1,6 @@
 import { ChangeEventHandler, useEffect, useState } from "react";
+import Link from "next/link";
+import Confetti from "react-confetti";
 import { useAppSelector } from "src/store";
 import { selectUser } from "src/store/user";
 
@@ -54,8 +56,26 @@ export const OnboardingChecklist = () => {
   if (!user) return null;
   const { two_factor_authentication, slack_id } = user;
 
+  const checklistComplete =
+    two_factor_authentication && !!slack_id && agreedToCoC;
+
+  if (checklistComplete) {
+    return (
+      <div className="text-center px-8 rounded-md m-auto mt-12 bg-indigo-100 border border-indigo-500 max-w-fit shadow-md">
+        <Confetti />
+        <h2 className="text-2xl">You did it!</h2>
+        <p>Thanks for being here.</p>
+        <p>
+          Your next step is to find a <Link href="/projects">project</Link> to
+          contribute.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <>
+      <p className="text-center">Here's your onboarding checklist:</p>
       <fieldset className="space-y-5 w-fit m-auto">
         <ChecklistItem
           checked={two_factor_authentication}
