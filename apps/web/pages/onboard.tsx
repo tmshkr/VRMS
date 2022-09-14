@@ -1,8 +1,7 @@
-import type { NextPage } from "next";
 import Head from "next/head";
 import { OnboardingChecklist } from "components/onboarding/OnboardingChecklist";
 
-const Onboard: NextPage = () => {
+const OnboardPage = () => {
   return (
     <>
       <Head>
@@ -18,4 +17,6 @@ const Onboard: NextPage = () => {
   );
 };
 
-export default Onboard;
+OnboardPage.auth = {};
+
+export default OnboardPage;

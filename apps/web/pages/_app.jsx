@@ -41,14 +41,16 @@ function Login({ children }) {
   useEffect(() => {
     if (status === "authenticated") {
       dispatch(fetchUser(session.user));
-
-      if (!user?.completed_onboarding) {
-        router.push("/onboard");
-      }
     } else if (status === "unauthenticated") {
       dispatch(clearUser());
     }
   }, [status]);
+
+  useEffect(() => {
+    if (user && !user.completed_onboarding) {
+      router.push("/onboard");
+    }
+  }, [user]);
 
   return children;
 }
@@ -62,6 +64,10 @@ function Auth({ pageAuth, children }) {
 
   if (status === "loading") {
     return <h1 className="mt-12 text-center">Loading...</h1>;
+  }
+
+  if (!allowedRoles) {
+    return children;
   }
 
   if (user) {
