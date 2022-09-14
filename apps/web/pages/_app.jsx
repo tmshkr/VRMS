@@ -36,14 +36,15 @@ function Login({ children }) {
   const router = useRouter();
   const { data: session, status } = useSession();
   const dispatch = useAppDispatch();
+  const user = useAppSelector(selectUser);
 
   useEffect(() => {
     if (status === "authenticated") {
       dispatch(fetchUser(session.user));
 
-      // if (!user.onboarding_complete) {
-      //   router.push("/onboard");
-      // }
+      if (!user?.completed_onboarding) {
+        router.push("/onboard");
+      }
     } else if (status === "unauthenticated") {
       dispatch(clearUser());
     }
