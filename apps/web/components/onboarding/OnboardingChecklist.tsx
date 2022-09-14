@@ -1,67 +1,140 @@
-import { ChangeEventHandler } from "react";
+import { ChangeEventHandler, useEffect, useState } from "react";
 import { useAppSelector } from "src/store";
 import { selectUser } from "src/store/user";
 
+import { useForm } from "react-hook-form";
+
+import { Modal } from "components/Modal";
+
 const SLACK_APP_ID = process.env.NEXT_PUBLIC_SLACK_APP_ID;
 const SLACK_TEAM_ID = process.env.NEXT_PUBLIC_SLACK_TEAM_ID;
+const SLACK_INVITE_LINK = process.env.NEXT_PUBLIC_SLACK_INVITE_LINK;
+
+const buttonStyles =
+  "block m-auto mt-4 items-center rounded border border-transparent bg-indigo-600 px-2.5 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2";
 
 export const OnboardingChecklist = () => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [agreedToCoC, setAgreedToCoC] = useState(false);
+  const closeModal = () => {
+    setIsModalOpen(false);
+  };
+  const openModal = () => {
+    setIsModalOpen(true);
+  };
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    setError,
+    setFocus,
+  } = useForm();
+
+  const onSubmit = async (values) => {
+    const { magic_word } = values;
+    if (magic_word === "strawberry") {
+      setAgreedToCoC(true);
+      closeModal();
+    } else {
+      setError("magic_word", {
+        type: "wrong_word",
+        message: "That's not the magic word!",
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (isModalOpen) {
+      setFocus("magic_word");
+    }
+  }, [isModalOpen]);
+
   const user = useAppSelector(selectUser);
   if (!user) return null;
   const { two_factor_authentication, slack_id } = user;
 
   return (
-    <fieldset className="space-y-5 w-fit m-auto">
-      <ChecklistItem
-        checked={!!slack_id}
-        name="connect-slack"
-        label={
-          <>
-            Connect your account to Slack in the{" "}
-            <a
-              href={`slack://app?team=${SLACK_TEAM_ID}&id=${SLACK_APP_ID}&tab=home
+    <>
+      <fieldset className="space-y-5 w-fit m-auto">
+        <ChecklistItem
+          checked={two_factor_authentication}
+          name="enable-2fa"
+          label="Enable 2FA on your GitHub account"
+          description={
+            two_factor_authentication
+              ? "2FA is enabled on your GitHub account"
+              : "Enable 2FA on your GitHub account for better security"
+          }
+        />
+        <ChecklistItem
+          checked={!!slack_id}
+          name="connect-slack"
+          label={
+            <>
+              Connect your account to Slack in the{" "}
+              <a
+                href={`slack://app?team=${SLACK_TEAM_ID}&id=${SLACK_APP_ID}&tab=home
         `}
-            >
-              Home tab
-            </a>
-          </>
-        }
-        description={
-          !!slack_id
-            ? "Your Slack account is connected"
-            : "Watch this video to see how to do it"
-        }
-      />
-      <ChecklistItem
-        checked={two_factor_authentication}
-        name="enable-2fa"
-        label="Enable 2FA on your GitHub account"
-        description={
-          two_factor_authentication
-            ? "2FA is enabled on your GitHub account"
-            : "Enable 2FA on your GitHub account for better security"
-        }
-      />
-      <ChecklistItem
-        checked={false}
-        readOnly={false}
-        onChange={(e) => console.log(e)}
-        name="code-of-conduct"
-        label={
-          <>
-            Read and agree to the{" "}
-            <a
-              href="https://github.com/hackforla/codeofconduct"
-              target="_blank"
-              rel="noopener noreferer"
-            >
-              Code of Conduct
-            </a>
-          </>
-        }
-        description="Look for the magic word in the Code of Conduct"
-      />
-    </fieldset>
+              >
+                Home tab
+              </a>
+            </>
+          }
+          description={
+            !!slack_id ? (
+              "Your Slack account is connected"
+            ) : (
+              <>
+                <a
+                  href={SLACK_INVITE_LINK}
+                  target="_blank"
+                  rel="noopener noreferer"
+                >
+                  Join us on Slack
+                </a>{" "}
+                if you haven't already
+              </>
+            )
+          }
+        />
+        <ChecklistItem
+          checked={agreedToCoC}
+          readOnly={false}
+          onChange={openModal}
+          name="code-of-conduct"
+          label={
+            <div className="cursor-pointer">
+              Read and agree to the{" "}
+              <a
+                href="https://github.com/hackforla/codeofconduct"
+                target="_blank"
+                rel="noopener noreferer"
+              >
+                Code of Conduct
+              </a>
+            </div>
+          }
+          description="Look for the magic word in the Code of Conduct"
+        />
+      </fieldset>
+      <Modal {...{ isModalOpen, closeModal }}>
+        <p className="text-center">What's the magic word?</p>
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <input
+            {...register("magic_word", {
+              required: "You didn't say the magic word.",
+            })}
+            className="block m-auto text-center"
+            type="text"
+          />
+          <button className={buttonStyles}>Submit</button>
+          <p className="text-center h-4 mb-0 text-red-600">
+            {errors.magic_word && String(errors.magic_word.message)}
+          </p>
+        </form>
+      </Modal>
+    </>
   );
 };
 
@@ -76,7 +149,7 @@ const ChecklistItem = ({
   checked: boolean;
   name: string;
   label: any;
-  description: string;
+  description: any;
   readOnly?: boolean;
   onChange?: ChangeEventHandler<HTMLInputElement> | undefined;
 }) => {
