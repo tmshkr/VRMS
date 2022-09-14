@@ -40,7 +40,9 @@ export const withUser = async (req, res, next) => {
     req.vrms_user = vrms_user;
 
     return next();
-  } catch (err) {
-    res.status(401).json({ errorMessage: "Unauthorized" });
+  } catch (err: any) {
+    if (err.name === "NotFoundError") {
+      res.status(404).json({ errorMessage: "User not found" });
+    } else res.status(401).json({ errorMessage: "Unauthorized" });
   }
 };

@@ -1,7 +1,6 @@
 import Head from "next/head";
 import { useEffect, useRef, useState } from "react";
 import axios from "axios";
-import { useLocalStorage } from "hooks/useLocalStorage";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import prisma from "lib/prisma";
@@ -9,6 +8,9 @@ import { getMongoClient } from "lib/mongo";
 import Markdown from "marked-react";
 import { PencilAltIcon, CheckIcon } from "@heroicons/react/outline";
 import { useForm } from "react-hook-form";
+
+import { useAppDispatch, useAppSelector } from "src/store";
+import { selectUser } from "src/store/user";
 
 const MarkdownEditor = dynamic(() => import("components/MarkdownEditor"), {
   ssr: false,
@@ -22,8 +24,10 @@ export default function ProfilePage(props) {
   const easyMDEref = useRef(null);
   const [isEditingReadme, setIsEditingReadme] = useState(false);
   const [profile, setProfile] = useState(props.profile);
-  const [user] = useLocalStorage("user");
-  const canEdit = user?.vrms_user?.id === profile.id;
+  const dispatch = useAppDispatch();
+  const user = useAppSelector(selectUser);
+
+  const canEdit = user?.id === profile.id;
 
   const saveReadme = async () => {
     const readme = easyMDEref.current.value();

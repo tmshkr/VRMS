@@ -6,8 +6,10 @@ import Link from "next/link";
 import { Disclosure, Menu, Transition } from "@headlessui/react";
 import { MenuIcon, XIcon } from "@heroicons/react/outline";
 import { getPathRoot } from "utils/path";
-import { useLocalStorage } from "hooks/useLocalStorage";
 import Logo from "assets/logo-hfla.svg";
+
+import { useAppDispatch, useAppSelector } from "src/store";
+import { fetchUser, clearUser, selectUser } from "src/store/user";
 
 import dynamic from "next/dynamic";
 
@@ -24,8 +26,8 @@ declare var document: any;
 
 export function Dashboard({ children }) {
   const router = useRouter();
-  const { data: session, status } = useSession();
-  const [user, setUser] = useLocalStorage("user", session?.user);
+  const user = useAppSelector(selectUser);
+
   const pathRoot = getPathRoot(router.pathname);
   const navigation = [
     { name: "Dashboard", href: "/", current: pathRoot === "/" },
@@ -33,18 +35,6 @@ export function Dashboard({ children }) {
     { name: "Projects", href: "/projects", current: pathRoot === "/projects" },
     { name: "People", href: "/people", current: pathRoot === "/people" },
   ];
-
-  useEffect(() => {
-    if (status === "authenticated") {
-      const user: any = session.user;
-      setUser(user);
-      // if (!user.onboarding_complete) {
-      //   router.push("/onboard");
-      // }
-    } else if (status === "unauthenticated") {
-      setUser(null);
-    }
-  }, [status]);
 
   return (
     <>
@@ -121,10 +111,7 @@ export function Dashboard({ children }) {
                                 to be having issues with navigating between profiles
                                 */}
                                 <a
-                                  href={`/people/${
-                                    user.vrms_user?.username ||
-                                    user.vrms_user?.id
-                                  }`}
+                                  href={`/people/${user?.username || user?.id}`}
                                   className="block px-4 py-2 text-sm text-gray-700"
                                 >
                                   Profile
