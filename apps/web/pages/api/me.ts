@@ -1,5 +1,5 @@
 import { getMongoClient } from "lib/mongo";
-import { withUser } from "lib/withUser";
+import { withUser } from "src/middleware/withUser";
 import { removeEmpty } from "common/utils/object";
 
 import type { NextApiRequest, NextApiResponse } from "next";

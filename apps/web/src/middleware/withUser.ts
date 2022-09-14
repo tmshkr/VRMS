@@ -23,6 +23,7 @@ export const withUser = async (req, res, next) => {
           user: {
             select: {
               id: true,
+              completed_onboarding: true,
               slack_id: true,
               username: true,
               app_roles: true,
