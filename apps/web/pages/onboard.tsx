@@ -10,7 +10,7 @@ const OnboardPage = () => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <h1 className="text-center">Welcome to Hack for LA! 🎉</h1>
+      <h1 className="text-center">Welcome to Hack for LA</h1>
       <OnboardingChecklist />
     </>
   );
