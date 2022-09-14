@@ -49,24 +49,22 @@ function Login({ children }) {
     }
   }, [status]);
 
-  if (status === "loading") {
-    return <h1 className="mt-12 text-center">Loading...</h1>;
-  }
-
   return children;
 }
 
 function Auth({ pageAuth, children }) {
   // if `{ required: true }` is supplied, `status` can only be "loading" or "authenticated"
   const { data, status } = useSession({ required: true });
+  const user = useAppSelector(selectUser);
+
   const { allowedRoles } = pageAuth;
 
   if (status === "loading") {
     return <h1 className="mt-12 text-center">Loading...</h1>;
   }
 
-  if (data.user.vrms_user) {
-    const { app_roles } = data.user.vrms_user;
+  if (user) {
+    const { app_roles } = user;
 
     for (const role of app_roles) {
       if (allowedRoles.includes(role)) {
