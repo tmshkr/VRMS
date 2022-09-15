@@ -9,9 +9,10 @@ import { useForm } from "react-hook-form";
 
 import { Modal } from "components/Modal";
 
-const SLACK_APP_ID = process.env.NEXT_PUBLIC_SLACK_APP_ID;
-const SLACK_TEAM_ID = process.env.NEXT_PUBLIC_SLACK_TEAM_ID;
-const SLACK_INVITE_LINK = process.env.NEXT_PUBLIC_SLACK_INVITE_LINK;
+const SLACK_APP_ID = "A03GZVAKF09";
+const SLACK_TEAM_ID = "T037ZBFP354";
+const SLACK_INVITE_LINK =
+  "https://join.slack.com/t/vrms-dev/shared_invite/zt-1dlft3msj-pFun_ML7fDHXywkTelYGRw";
 
 const buttonStyles =
   "block m-auto mt-4 items-center rounded border border-transparent bg-indigo-600 px-2.5 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2";
