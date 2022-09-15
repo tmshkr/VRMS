@@ -104,8 +104,7 @@ export const OnboardingChecklist = () => {
             <>
               Connect your account to Slack in the{" "}
               <a
-                href={`slack://app?team=${SLACK_TEAM_ID}&id=${SLACK_APP_ID}&tab=home
-        `}
+                href={`slack://app?team=${SLACK_TEAM_ID}&id=${SLACK_APP_ID}&tab=home`}
               >
                 Home tab
               </a>
