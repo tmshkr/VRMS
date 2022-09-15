@@ -9,7 +9,7 @@ import { useForm } from "react-hook-form";
 
 import { Modal } from "components/Modal";
 
-const SLACK_APP_ID = "A03GZVAKF09";
+const SLACK_APP_ID = "A041UM5JG67";
 const SLACK_TEAM_ID = "T037ZBFP354";
 const SLACK_INVITE_LINK =
   "https://join.slack.com/t/vrms-dev/shared_invite/zt-1dlft3msj-pFun_ML7fDHXywkTelYGRw";
