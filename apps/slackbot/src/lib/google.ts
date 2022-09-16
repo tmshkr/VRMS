@@ -1,6 +1,6 @@
 const { google } = require("googleapis");
 const auth = new google.auth.GoogleAuth({
-  credentials: JSON.parse(process.env.GOOGLE_TOKEN || ""),
+  credentials: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_KEY_JSON || ""),
   scopes: ["https://www.googleapis.com/auth/calendar.events"],
 });
 
