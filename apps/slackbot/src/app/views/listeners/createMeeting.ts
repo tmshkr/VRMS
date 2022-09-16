@@ -89,7 +89,6 @@ export const createMeeting = async ({ ack, body, view, client, logger }) => {
       createRequest: { requestId: Date.now() },
     },
     recurrence: [rule?.toString().split("\n")[1]],
-    attendees: participants.map(({ email }) => ({ email })),
     extendedProperties: {
       private: {
         vrms_project_id: Number(meeting_project.selected_option.value),
