@@ -85,9 +85,6 @@ export const createMeeting = async ({ ack, body, view, client, logger }) => {
         ),
       timeZone: "America/Los_Angeles",
     },
-    conferenceData: {
-      createRequest: { requestId: Date.now() },
-    },
     recurrence: [rule?.toString().split("\n")[1]],
     extendedProperties: {
       private: {
