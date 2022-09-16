@@ -15,7 +15,7 @@ export function registerJobs(agenda) {
         }
         return meeting;
       });
-    await sendMeetingCheckin(slack_channel_id, join_url);
+    await sendMeetingCheckin(slack_channel_id, meeting_id);
 
     if (rrule) {
       const nextRunAt = getNextOccurrence(rrule);

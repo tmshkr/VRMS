@@ -89,7 +89,6 @@ export const createMeeting = async ({ ack, body, view, client, logger }) => {
       createRequest: { requestId: Date.now() },
     },
     recurrence: [rule?.toString().split("\n")[1]],
-    attendees: participants.map(({ email }) => ({ email })),
     extendedProperties: {
       private: {
         vrms_project_id: Number(meeting_project.selected_option.value),
@@ -103,7 +102,6 @@ export const createMeeting = async ({ ack, body, view, client, logger }) => {
       duration: Number(meeting_duration.selected_option.value.split(" ")[0]),
       gcal_event_id: gcalEvent.id,
       gcal_event_link: gcalEvent.htmlLink,
-      join_url: gcalEvent.hangoutLink,
       project_id: Number(meeting_project.selected_option.value),
       rrule: rule?.toString(),
       slack_channel_id: meeting_channel.selected_channel,
