@@ -37,8 +37,12 @@ export async function getServerSideProps(context) {
 
   const nextToken: any = await getToken({ req });
   if (!nextToken) {
-    res.redirect(`/api/auth/signin?callbackUrl=${req.url}`);
-    return;
+    return {
+      redirect: {
+        destination: `/api/auth/signin?callbackUrl=${req.url}`,
+        permanent: false,
+      },
+    };
   }
 
   const { provider, provider_account_id } = nextToken;
