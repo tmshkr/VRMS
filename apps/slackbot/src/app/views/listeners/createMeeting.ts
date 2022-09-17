@@ -1,11 +1,11 @@
 import prisma from "lib/prisma";
 import { RRule } from "rrule";
-import { getFakeUTC } from "lib/rrule";
-import dayjs from "lib/dayjs";
+import { getFakeUTC } from "common/rrule";
+import dayjs from "common/dayjs";
 import { getAgenda } from "lib/agenda";
 import { getHomeTab } from "app/views/home";
 import { getInnerValues } from "utils/getInnerValues";
-import { createCalendarEvent } from "lib/google";
+import { createCalendarEvent } from "common/google";
 
 export const createMeeting = async ({ ack, body, view, client, logger }) => {
   await ack();
