@@ -9,12 +9,15 @@ export function getFakeUTC(date: dayjs.Dayjs): string {
   return date.format().slice(0, -6) + "Z";
 }
 
-export function getNextOccurrence(rrule: string): Date {
+export function getNextOccurrence(
+  rrule: string,
+  start_date = new Date()
+): Date {
   const rule = rrulestr(rrule);
   const maxDate = new Date(8640000000000000);
 
   const [nextOccurrence] = rule.between(
-    new Date(),
+    start_date,
     maxDate,
     false,
     (date, i) => i === 0
