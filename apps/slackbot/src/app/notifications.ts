@@ -18,7 +18,7 @@ export const sendMeetingCheckin = async (channel, meeting_id) => {
             text: "Check In",
           },
           action_id: "meeting_check_in",
-          url: `${process.env.NEXTAUTH_URL}/meetings/${meeting_id}`,
+          url: `${process.env.NEXTAUTH_URL}/meetings/${meeting_id}/checkin`,
         },
       },
     ],
