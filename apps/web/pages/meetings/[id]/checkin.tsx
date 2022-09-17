@@ -1,9 +1,12 @@
-import type { NextPage } from "next";
+import { getToken } from "next-auth/jwt";
 import Head from "next/head";
 import prisma from "lib/prisma";
+import { getMongoClient } from "common/mongo";
+import { getNextOccurrence } from "common/rrule";
+import dayjs from "common/dayjs";
 
-const MeetingCheckin: NextPage = (props: any) => {
-  const { meeting } = props;
+const MeetingCheckinPage = (props: any) => {
+  const { meeting, message } = props;
   return (
     <>
       <Head>
@@ -12,14 +15,16 @@ const MeetingCheckin: NextPage = (props: any) => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <h1>{meeting.title}</h1>
+      <p>{message}</p>
     </>
   );
 };
 
-export default MeetingCheckin;
+export default MeetingCheckinPage;
 
 export async function getServerSideProps(context) {
-  const id = Number(context.params.id);
+  const { req, res, params } = context;
+  const id = Number(params.id);
 
   if (!id) {
     return {
@@ -30,14 +35,92 @@ export async function getServerSideProps(context) {
     };
   }
 
-  const meeting = await prisma.meeting.findUnique({
+  const nextToken: any = await getToken({ req });
+  if (!nextToken) {
+    res.redirect(`/api/auth/signin?callbackUrl=${req.url}`);
+    return;
+  }
+
+  const { provider, provider_account_id } = nextToken;
+  const { user } = await prisma.account.findUniqueOrThrow({
+    where: {
+      provider_provider_account_id: {
+        provider,
+        provider_account_id,
+      },
+    },
+    select: {
+      user: {
+        select: {
+          id: true,
+          slack_id: true,
+        },
+      },
+    },
+  });
+
+  const meeting = await prisma.meeting.findUniqueOrThrow({
     where: { id },
     select: {
       id: true,
       title: true,
+      rrule: true,
+      start_date: true,
     },
   });
+
+  // 30 minute checkin window
+  const checkinWindowStart = dayjs().subtract(15, "minute");
+  const checkinWindowEnd = dayjs().add(15, "minute");
+
+  const meeting_date = meeting.rrule
+    ? getNextOccurrence(meeting.rrule, checkinWindowStart.toDate())
+    : meeting.start_date;
+
+  let outsideCheckinWindow;
+  if (
+    checkinWindowStart.isSameOrBefore(meeting_date) &&
+    checkinWindowEnd.isSameOrAfter(meeting_date)
+  ) {
+    console.log("within checkin window");
+    const mongoClient = await getMongoClient();
+    var { alreadyCheckedIn, insertedCount } = await mongoClient
+      .db()
+      .collection("meetingCheckins")
+      .insert({
+        _id: {
+          user_id: user.id,
+          meeting_id: meeting.id,
+          meeting_date: meeting_date,
+        },
+        checkin_date: new Date(),
+      })
+      .catch((err) => {
+        if (err.code === 11000) {
+          console.log("already checked in");
+          return { alreadyCheckedIn: true };
+        }
+      });
+  } else {
+    console.log("outside checkin window");
+    outsideCheckinWindow = true;
+  }
+
+  let message;
+  if (alreadyCheckedIn) {
+    message = "It looks like you already checked in";
+  } else if (insertedCount === 1) {
+    message = "Thanks for checking in";
+  } else if (outsideCheckinWindow) {
+    message = "It looks like you're outside the checkin window";
+  } else {
+    message = "There was a problem checking you in";
+  }
+
   return {
-    props: { meeting },
+    props: {
+      meeting: { title: meeting.title },
+      message,
+    },
   };
 }
