@@ -1,6 +1,6 @@
 import prisma from "lib/prisma";
 import { sendMeetingCheckin } from "app/notifications";
-import { getNextOccurrence } from "lib/rrule";
+import { getNextOccurrence } from "common/rrule";
 
 export function registerJobs(agenda) {
   agenda.define("sendMeetingCheckin", async (job) => {

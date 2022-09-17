@@ -1,7 +1,7 @@
 import prisma from "lib/prisma";
 import dayjs from "common/dayjs";
 import { generateEventInstanceId } from "common/google";
-import { getNextOccurrence } from "lib/rrule";
+import { getNextOccurrence } from "common/rrule";
 import axios from "axios";
 const jwt = require("jsonwebtoken");
 
