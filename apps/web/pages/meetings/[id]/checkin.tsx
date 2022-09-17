@@ -45,23 +45,32 @@ export async function getServerSideProps(context) {
     };
   }
 
-  const { provider, provider_account_id } = nextToken;
-  const { user } = await prisma.account.findUniqueOrThrow({
-    where: {
-      provider_provider_account_id: {
-        provider,
-        provider_account_id,
-      },
-    },
-    select: {
-      user: {
-        select: {
-          id: true,
-          slack_id: true,
+  try {
+    const { provider, provider_account_id } = nextToken;
+    var { user } = await prisma.account.findUniqueOrThrow({
+      where: {
+        provider_provider_account_id: {
+          provider,
+          provider_account_id,
         },
       },
-    },
-  });
+      select: {
+        user: {
+          select: {
+            id: true,
+            slack_id: true,
+          },
+        },
+      },
+    });
+  } catch (err) {
+    return {
+      redirect: {
+        destination: `/onboard`,
+        permanent: false,
+      },
+    };
+  }
 
   const meeting = await prisma.meeting.findUniqueOrThrow({
     where: { id },
