@@ -10,7 +10,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 800m
+          memory: 700m
     depends_on:
       - nginx
   nginx:
