@@ -7,6 +7,10 @@ services:
     env_file:
       - .env
     restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 800m
     depends_on:
       - nginx
   nginx:
@@ -21,6 +25,10 @@ services:
     volumes:
       - nginx_secrets:/etc/letsencrypt
       - ./nginx:/etc/nginx/user_conf.d
+    deploy:
+      resources:
+        limits:
+          memory: 100m
 
 volumes:
   nginx_secrets:
