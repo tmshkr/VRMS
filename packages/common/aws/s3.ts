@@ -39,7 +39,7 @@ export const putS3Object = async (bucket, key, body) => {
 // Create a helper function to convert a ReadableStream to a string.
 function streamToString(stream) {
   return new Promise((resolve, reject) => {
-    const chunks = [];
+    const chunks: any = [];
     stream.on("data", (chunk) => chunks.push(chunk));
     stream.on("error", reject);
     stream.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
