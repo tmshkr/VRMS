@@ -2,10 +2,12 @@
   "name": "slackbot",
   "version": "1.0.0",
   "description": "",
-  "main": "src/index.ts",
+  "main": "dist/index.js",
   "scripts": {
-    "start": "NODE_PATH=src ts-node src/index.ts --transpile-only",
-    "dev": "NODE_PATH=src nodemon src/index.ts"
+    "build": "rm -rf dist && tsc -p .",
+    "prestart": "sh ./prestart.sh",
+    "start": "NODE_PATH=dist node dist/index.js",
+    "dev": "rm -rf node_modules/common && NODE_PATH=src nodemon src/index.ts"
   },
   "dependencies": {
     "eslint-config-custom": "*",
