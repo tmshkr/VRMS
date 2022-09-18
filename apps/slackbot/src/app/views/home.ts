@@ -1,6 +1,7 @@
 import prisma from "lib/prisma";
-import dayjs from "lib/dayjs";
-import { getNextOccurrence } from "lib/rrule";
+import dayjs from "common/dayjs";
+import { generateEventInstanceId } from "common/google";
+import { getNextOccurrence } from "common/rrule";
 import axios from "axios";
 const jwt = require("jsonwebtoken");
 
@@ -165,13 +166,7 @@ function renderMeeting(meeting) {
   const url = new URL("https://www.google.com/calendar/event");
   url.searchParams.set(
     "eid",
-    Buffer.from(
-      `${meeting.gcal_event_id}_${dayjs(nextMeeting)
-        .utc()
-        .format("YYYYMMDDTHHmmss[Z]")} ${process.env.GOOGLE_CALENDAR_ID}`
-    )
-      .toString("base64")
-      .replace(/=/g, "")
+    generateEventInstanceId(meeting.gcal_event_id, nextMeeting)
   );
 
   return {

@@ -1,6 +1,6 @@
 import { app } from "app";
 
-export const sendMeetingCheckin = async (channel, joinUrl) => {
+export const sendMeetingCheckin = async (channel, meeting_id) => {
   await app.client.chat.postMessage({
     channel,
     text: `@here it's time to meet!`,
@@ -15,10 +15,10 @@ export const sendMeetingCheckin = async (channel, joinUrl) => {
           type: "button",
           text: {
             type: "plain_text",
-            text: "Join Meeting",
+            text: "Check In",
           },
           action_id: "meeting_check_in",
-          url: joinUrl,
+          url: `${process.env.NEXTAUTH_URL}/meetings/${meeting_id}/checkin`,
         },
       },
     ],

@@ -1,11 +1,11 @@
 import prisma from "lib/prisma";
 import { RRule } from "rrule";
-import { getFakeUTC } from "lib/rrule";
-import dayjs from "lib/dayjs";
+import { getFakeUTC } from "common/rrule";
+import dayjs from "common/dayjs";
 import { getAgenda } from "lib/agenda";
 import { getHomeTab } from "app/views/home";
 import { getInnerValues } from "utils/getInnerValues";
-import { createCalendarEvent } from "lib/google";
+import { createCalendarEvent } from "common/google";
 
 export const createMeeting = async ({ ack, body, view, client, logger }) => {
   await ack();
@@ -85,11 +85,7 @@ export const createMeeting = async ({ ack, body, view, client, logger }) => {
         ),
       timeZone: "America/Los_Angeles",
     },
-    conferenceData: {
-      createRequest: { requestId: Date.now() },
-    },
     recurrence: [rule?.toString().split("\n")[1]],
-    attendees: participants.map(({ email }) => ({ email })),
     extendedProperties: {
       private: {
         vrms_project_id: Number(meeting_project.selected_option.value),
@@ -103,7 +99,6 @@ export const createMeeting = async ({ ack, body, view, client, logger }) => {
       duration: Number(meeting_duration.selected_option.value.split(" ")[0]),
       gcal_event_id: gcalEvent.id,
       gcal_event_link: gcalEvent.htmlLink,
-      join_url: gcalEvent.hangoutLink,
       project_id: Number(meeting_project.selected_option.value),
       rrule: rule?.toString(),
       slack_channel_id: meeting_channel.selected_channel,

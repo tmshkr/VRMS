@@ -60,11 +60,9 @@ model User {
   completed_onboarding Boolean @default(false)
   email                String  @unique
   first_name           String
-  headline             String?
   last_name            String
   real_name            String
   profile_image        String
-  readme               String?
   slack_id             String  @unique
   slack_team_id        String
   username             String? @unique

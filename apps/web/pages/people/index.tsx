@@ -18,7 +18,7 @@ export default function Web({ people }) {
 
 export async function getServerSideProps(context) {
   const people =
-    await prisma.$queryRaw`SELECT id, headline, last_name, profile_image, readme, real_name, username FROM "User" ORDER BY lower(real_name) ASC`;
+    await prisma.$queryRaw`SELECT id, real_name, username FROM "User" ORDER BY lower(real_name) ASC`;
 
   return {
     props: { people },

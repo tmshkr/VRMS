@@ -1,3 +1,6 @@
+// next.config.js
+const withTM = require("next-transpile-modules")(["common"]); // pass the modules you would like to see transpiled
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -11,4 +14,4 @@ const nextConfig = {
   },
 };
 
-module.exports = nextConfig;
+module.exports = withTM(nextConfig);

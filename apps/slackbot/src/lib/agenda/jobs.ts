@@ -1,6 +1,6 @@
 import prisma from "lib/prisma";
 import { sendMeetingCheckin } from "app/notifications";
-import { getNextOccurrence } from "lib/rrule";
+import { getNextOccurrence } from "common/rrule";
 
 export function registerJobs(agenda) {
   agenda.define("sendMeetingCheckin", async (job) => {
@@ -15,7 +15,7 @@ export function registerJobs(agenda) {
         }
         return meeting;
       });
-    await sendMeetingCheckin(slack_channel_id, join_url);
+    await sendMeetingCheckin(slack_channel_id, meeting_id);
 
     if (rrule) {
       const nextRunAt = getNextOccurrence(rrule);

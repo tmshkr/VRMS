@@ -41,6 +41,8 @@ export const registerEvents = () => {
       await prisma.user.update({
         where: { slack_id: user.id },
         data: {
+          first_name: user.profile.first_name,
+          last_name: user.profile.last_name,
           real_name: user.real_name,
           email: user.profile.email,
           profile_image: user.profile.image_512,

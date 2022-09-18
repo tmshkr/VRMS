@@ -1,38 +1,52 @@
 import Head from "next/head";
 import { useEffect, useRef, useState } from "react";
 import axios from "axios";
-import { useLocalStorage } from "hooks/useLocalStorage";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import prisma from "lib/prisma";
+import { getMongoClient } from "lib/mongo";
 import Markdown from "marked-react";
 import { PencilAltIcon, CheckIcon } from "@heroicons/react/outline";
 import { useForm } from "react-hook-form";
 
-// const classNames = require("classnames");
+import { useAppDispatch, useAppSelector } from "src/store";
+import { selectUser } from "src/store/user";
 
 const MarkdownEditor = dynamic(() => import("components/MarkdownEditor"), {
   ssr: false,
 });
 
 const buttonStyles =
-  "inline-flex items-center rounded border border-transparent bg-indigo-600 px-2.5 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 mr-2";
+  "inline-flex items-center rounded border border-transparent bg-indigo-600 px-2.5 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2";
 
-export default function UserProfile(props) {
+export default function ProfilePage(props) {
   const { meetings, projects } = props;
   const easyMDEref = useRef(null);
   const [isEditingReadme, setIsEditingReadme] = useState(false);
-  const [userProfile, setUserProfile] = useState(props.userProfile);
-  const [user] = useLocalStorage("user");
-  const canEdit = user?.vrms_user?.id === userProfile.id;
-  const sumbitReadme = async () => {
-    const { data } = await axios.put("/api/me", {
-      readme: easyMDEref.current.value(),
-    });
+  const [profile, setProfile] = useState(props.profile);
+  const dispatch = useAppDispatch();
+  const user = useAppSelector(selectUser);
+
+  const canEdit = user?.id === profile.id;
+
+  const saveReadme = async () => {
+    const readme = easyMDEref.current.value();
+    await axios.put("/api/me", { readme });
 
     easyMDEref.current.toTextArea();
+    easyMDEref.current.cleanup();
+    easyMDEref.current = null;
+
+    setProfile({ ...profile, readme });
     setIsEditingReadme(false);
-    setUserProfile(data);
+  };
+
+  const cancelReadmeChanges = () => {
+    easyMDEref.current.toTextArea();
+    easyMDEref.current.cleanup();
+    easyMDEref.current = null;
+
+    setIsEditingReadme(false);
   };
 
   const [isEditingHeadline, setIsEditingHeadline] = useState(false);
@@ -44,10 +58,8 @@ export default function UserProfile(props) {
     setFocus,
   } = useForm();
   const onSubmitRHF = async ({ headline }) => {
-    const { data } = await axios.put("/api/me", {
-      headline,
-    });
-    setUserProfile(data);
+    await axios.put("/api/me", { headline });
+    setProfile({ ...profile, headline });
     setIsEditingHeadline(false);
   };
 
@@ -60,21 +72,21 @@ export default function UserProfile(props) {
   return (
     <div className="sm:flex">
       <Head>
-        <title>{userProfile.real_name} | VRMS</title>
+        <title>{profile.real_name} | VRMS</title>
       </Head>
       <div>
         <img
           className="max-w-full sm:max-w-xs rounded-md m-auto"
-          src={userProfile.profile_image}
+          src={profile.profile_image}
         />
         <div className="">
           <div className="text-center p-3" suppressHydrationWarning>
-            <h2 className="m-0">{userProfile.real_name}</h2>
+            <h2 className="m-0">{profile.real_name}</h2>
             {isEditingHeadline ? (
               <form onSubmit={handleSubmit(onSubmitRHF)}>
                 <input
                   className="text-center w-full"
-                  defaultValue={userProfile.headline}
+                  defaultValue={profile.headline}
                   {...register("headline")}
                 />
                 <button
@@ -86,7 +98,7 @@ export default function UserProfile(props) {
               </form>
             ) : (
               <>
-                <p className="m-0">{userProfile.headline} </p>
+                <p className="m-0">{profile.headline} </p>
                 {canEdit && (
                   <button
                     className="block m-auto p-4 cursor-pointer"
@@ -131,19 +143,30 @@ export default function UserProfile(props) {
       <div className="w-full px-4" suppressHydrationWarning>
         {isEditingReadme ? (
           <>
-            <MarkdownEditor
-              easyMDEref={easyMDEref}
-              content={userProfile.readme}
-            />
-            <button className={buttonStyles} onClick={sumbitReadme}>
-              Submit
+            <MarkdownEditor easyMDEref={easyMDEref} content={profile.readme} />
+            <button className={buttonStyles} onClick={saveReadme}>
+              Save
             </button>
+            <button
+              onClick={cancelReadmeChanges}
+              className="inline-flex items-center rounded border border-transparent bg-indigo-100 px-2.5 py-1.5 text-xs font-medium text-indigo-700 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ml-2"
+            >
+              Cancel
+            </button>
+            <a
+              target="_blank"
+              className="block md:inline-block md:ml-2 my-2"
+              rel="noopener noreferrer"
+              href="https://digital.gov/pdf/GSA-TTS_Personal-README-template.pdf"
+            >
+              What is a personal README?
+            </a>
           </>
         ) : (
           <>
             <Markdown className="w-full">
-              {userProfile.readme ||
-                `# Hello World\nIt looks like ${userProfile.first_name} hasn't filled out their personal README yet`}
+              {profile.readme ||
+                `# Hello World\nIt looks like ${profile.first_name} hasn't filled out their personal README yet`}
             </Markdown>
 
             {canEdit && (
@@ -156,6 +179,7 @@ export default function UserProfile(props) {
             )}
             <a
               target="_blank"
+              className="block sm:inline-block sm:ml-2 my-2"
               rel="noopener noreferrer"
               href="https://digital.gov/pdf/GSA-TTS_Personal-README-template.pdf"
             >
@@ -174,9 +198,7 @@ export async function getServerSideProps(context) {
   const select = {
     id: true,
     first_name: true,
-    headline: true,
     profile_image: true,
-    readme: true,
     real_name: true,
     username: true,
     meeting_assignments: {
@@ -213,23 +235,27 @@ export async function getServerSideProps(context) {
   const {
     id,
     first_name,
-    headline,
     profile_image,
-    readme,
     real_name,
     username,
     meeting_assignments,
     team_assignments,
   } = user;
 
+  const mongoClient = await getMongoClient();
+  const doc = await mongoClient
+    .db()
+    .collection("userProfiles")
+    .findOne({ _id: user.id });
+
   return {
     props: {
-      userProfile: {
+      profile: {
         id,
-        headline,
+        headline: doc?.headline || "",
         first_name,
         profile_image,
-        readme,
+        readme: doc?.readme || "",
         real_name,
         username,
       },

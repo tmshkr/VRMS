@@ -96,7 +96,14 @@ Provide the `GITHUB_ID` and `GITHUB_SECRET` variables in your `.env`.
 
 ### Google Calendar integration
 
-The app automatically creates a Google Calendar event for new meetings using the [Calendar API](https://developers.google.com/calendar/api). To get the necessary environment variables, follow the instructions in the [Node.js quickstart](https://developers.google.com/calendar/api/quickstart/nodejs).
+The app automatically creates a Google Calendar event for new meetings using the [Calendar API](https://developers.google.com/calendar/api). If you're new to the Calendar API, you might want to start with the [Node.js quickstart](https://developers.google.com/calendar/api/quickstart/nodejs).
+
+To get the necessary environment variables for the app, follow the steps below:
+
+1. Make sure the [Calendar API is enabled](https://console.cloud.google.com/marketplace/product/google/calendar-json.googleapis.com) in your Google Cloud project.
+2. Create a [service account](https://developers.google.com/identity/protocols/oauth2/service-account#creatinganaccount) in the [Google Cloud Console](https://console.cloud.google.com/iam-admin/serviceaccounts). The key type should be `JSON`.
+3. The service account will have an email address associated with it. Add that email address to your [Google Calendar's sharing settings](https://support.google.com/calendar/answer/37082) as a "Make changes to events" user.
+4. Paste the JSON key you downloaded in step 2 into your `.env` as the `GOOGLE_SERVICE_ACCOUNT_KEY_JSON` variable.
 
 ### Migrate and seed the database
 
