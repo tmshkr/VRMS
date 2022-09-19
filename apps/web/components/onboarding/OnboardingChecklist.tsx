@@ -75,10 +75,23 @@ export const OnboardingChecklist = () => {
         <Confetti />
         <h2 className="text-2xl">You did it! 🎉</h2>
         <p>Thanks for being here.</p>
-        <p>
-          Your next step is to find a <Link href="/projects">project</Link> to
-          contribute.
-        </p>
+        <h3>Next Steps</h3>
+        <ul className="text-left">
+          <li>
+            Go to your <Link href={`/people/${user.id}`}>profile</Link> and fill
+            out your&nbsp;
+            <a
+              target="_blank"
+              rel="noopener noreferrer"
+              href="https://digital.gov/pdf/GSA-TTS_Personal-README-template.pdf"
+            >
+              personal README
+            </a>
+          </li>
+          <li>
+            Find a <Link href="/projects">project</Link> to contribute
+          </li>
+        </ul>
       </div>
     );
   }
