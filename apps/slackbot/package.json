@@ -7,7 +7,7 @@
     "build": "rm -rf dist && tsc -p .",
     "prestart": "sh ./prestart.sh",
     "start": "NODE_PATH=dist node dist/index.js",
-    "dev": "rm -rf node_modules/common && NODE_PATH=src nodemon src/index.ts"
+    "dev": "NODE_PATH=src nodemon src/index.ts"
   },
   "dependencies": {
     "eslint-config-custom": "*",
