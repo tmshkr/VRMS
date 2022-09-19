@@ -1,9 +1,13 @@
 import type { NextPage } from "next";
 import Head from "next/head";
 import prisma from "lib/prisma";
+import dayjs from "common/dayjs";
+import { getNextOccurrence } from "common/rrule";
+import { generateBrowserEventInstanceId } from "lib/google";
 
 const Projects: NextPage = (props: any) => {
   const { project } = props;
+  console.log(props);
   return (
     <>
       <Head>
@@ -12,6 +16,41 @@ const Projects: NextPage = (props: any) => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <h1>{project.name}</h1>
+      <h2>Team Members</h2>
+      <ul>
+        {project.team_members.map(({ member, position, role }) => {
+          return <li key={member.id}>{member.real_name}</li>;
+        })}
+      </ul>
+      <h3>Upcoming Meetings</h3>
+      <ul>
+        {project.meetings.map((meeting) => {
+          const eventURL = new URL("https://www.google.com/calendar/event");
+          eventURL.searchParams.set(
+            "eid",
+            generateBrowserEventInstanceId(
+              meeting.gcal_event_id,
+              meeting.next_meeting
+            )
+          );
+          return (
+            <li key={meeting.id} suppressHydrationWarning>
+              {meeting.title}
+              <br />
+              {dayjs(meeting.next_meeting).format("MMM D, h:mm a")}
+              <br />
+              <a
+                href={eventURL.toString()}
+                target="_blank"
+                rel="noopener noreferrer"
+                suppressHydrationWarning
+              >
+                Add to Calendar
+              </a>
+            </li>
+          );
+        })}
+      </ul>
     </>
   );
 };
@@ -35,8 +74,40 @@ export async function getServerSideProps(context) {
     select: {
       id: true,
       name: true,
+      meetings: {
+        select: {
+          id: true,
+          gcal_event_id: true,
+          start_date: true,
+          rrule: true,
+          slack_channel_id: true,
+          title: true,
+        },
+      },
+      team_members: {
+        select: {
+          role: true,
+          position: true,
+          member: { select: { id: true, real_name: true } },
+        },
+      },
     },
   });
+
+  if (!project) {
+    return {
+      notFound: true,
+    };
+  }
+
+  for (const meeting of project.meetings) {
+    if (meeting.rrule) {
+      (meeting as any).next_meeting = getNextOccurrence(meeting.rrule);
+    } else {
+      (meeting as any).next_meeting = meeting.start_date;
+    }
+  }
+
   return {
     props: { project },
   };
