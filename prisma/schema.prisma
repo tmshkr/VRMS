@@ -57,15 +57,16 @@ model Account {
 model User {
   id Int @id @default(autoincrement())
 
-  completed_onboarding Boolean @default(false)
-  email                String  @unique
+  checkins             MeetingCheckin[]
+  completed_onboarding Boolean          @default(false)
+  email                String           @unique
   first_name           String
   last_name            String
   real_name            String
   profile_image        String
-  slack_id             String  @unique
+  slack_id             String           @unique
   slack_team_id        String
-  username             String? @unique
+  username             String?          @unique
 
   created_at DateTime @default(now())
   updated_at DateTime @default(now()) @updatedAt
@@ -128,7 +129,7 @@ model TeamMember {
 
   added_by_user User    @relation(name: "AddMember", fields: [added_by_id], references: [id])
   member        User    @relation(fields: [user_id], references: [id])
-  project       Project @relation(fields: [project_id], references: [id])
+  project       Project @relation(fields: [project_id], references: [id], onDelete: Cascade)
 
   @@id([user_id, project_id])
   @@index(user_id)
@@ -142,11 +143,12 @@ enum MeetingType {
 model Meeting {
   id Int @id @default(autoincrement())
 
+  checkins         MeetingCheckin[]
   created_by_id    Int
   duration         Int // in minutes
   gcal_event_id    String
   gcal_event_link  String
-  is_active        Boolean     @default(true)
+  is_active        Boolean          @default(true)
   join_url         String?
   project_id       Int
   rrule            String?
@@ -174,9 +176,25 @@ model MeetingParticipant {
   updated_at DateTime @default(now()) @updatedAt
 
   added_by_user User    @relation(name: "AddParticipant", fields: [added_by_id], references: [id])
-  meeting       Meeting @relation(fields: [meeting_id], references: [id])
+  meeting       Meeting @relation(fields: [meeting_id], references: [id], onDelete: Cascade)
   participant   User    @relation(fields: [user_id], references: [id])
 
   @@id([meeting_id, user_id])
+  @@index(user_id)
+}
+
+model MeetingCheckin {
+  meeting_id   Int
+  user_id      Int
+  meeting_date DateTime
+
+  created_at DateTime @default(now())
+  updated_at DateTime @default(now()) @updatedAt
+
+  meeting Meeting @relation(fields: [meeting_id], references: [id])
+  user    User    @relation(fields: [user_id], references: [id])
+
+  @@id([meeting_id, user_id, meeting_date])
+  @@index(meeting_id)
   @@index(user_id)
 }
