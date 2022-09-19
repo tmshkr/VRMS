@@ -1,9 +1,14 @@
 import type { NextPage } from "next";
 import Head from "next/head";
 import prisma from "lib/prisma";
+import dayjs from "common/dayjs";
+import Link from "next/link";
+import { getNextOccurrence } from "common/rrule";
+import { generateEventLink } from "common/google";
 
 const Meeting: NextPage = (props: any) => {
-  const { meeting } = props;
+  const { meeting, nextMeeting, gcalEventLink } = props;
+
   return (
     <>
       <Head>
@@ -12,6 +17,34 @@ const Meeting: NextPage = (props: any) => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <h1>{meeting.title}</h1>
+      <p>
+        <Link href={`/projects/${meeting.project.id}`}>
+          {meeting.project.name}
+        </Link>
+      </p>
+      <h2>📅 Next Meeting</h2>
+      <p suppressHydrationWarning>
+        {dayjs(nextMeeting).format("MMM D, h:mm a")}
+        <br />
+        <a
+          href={gcalEventLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          suppressHydrationWarning
+        >
+          Add to Calendar
+        </a>
+      </p>
+      <h2>👥 Participants</h2>
+      {meeting.participants.map(({ participant }) => {
+        return (
+          <li key={participant.id}>
+            <Link href={`/people/${participant.id}`}>
+              {participant.real_name}
+            </Link>
+          </li>
+        );
+      })}
     </>
   );
 };
@@ -23,10 +56,7 @@ export async function getServerSideProps(context) {
 
   if (!id) {
     return {
-      redirect: {
-        destination: "/meetings",
-        permanent: false,
-      },
+      notFound: true,
     };
   }
 
@@ -34,10 +64,41 @@ export async function getServerSideProps(context) {
     where: { id },
     select: {
       id: true,
+      gcal_event_id: true,
+      start_date: true,
+      rrule: true,
+      slack_channel_id: true,
       title: true,
+      project: { select: { id: true, name: true } },
+      participants: {
+        select: {
+          participant: {
+            select: {
+              id: true,
+              real_name: true,
+              slack_id: true,
+            },
+          },
+        },
+      },
     },
   });
+
+  if (!meeting) {
+    return {
+      notFound: true,
+    };
+  }
+
+  const nextMeeting = meeting.rrule
+    ? getNextOccurrence(meeting.rrule)
+    : meeting.start_date;
+
   return {
-    props: { meeting },
+    props: {
+      meeting,
+      nextMeeting,
+      gcalEventLink: generateEventLink(meeting.gcal_event_id, nextMeeting),
+    },
   };
 }

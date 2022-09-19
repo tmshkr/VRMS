@@ -1,13 +1,14 @@
 import type { NextPage } from "next";
 import Head from "next/head";
+import Link from "next/link";
 import prisma from "lib/prisma";
 import dayjs from "common/dayjs";
 import { getNextOccurrence } from "common/rrule";
-import { generateBrowserEventInstanceId } from "lib/google";
+import { generateEventLink } from "common/google";
 
 const Projects: NextPage = (props: any) => {
   const { project } = props;
-  console.log(props);
+
   return (
     <>
       <Head>
@@ -16,31 +17,27 @@ const Projects: NextPage = (props: any) => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <h1>{project.name}</h1>
-      <h2>Team Members</h2>
+      <h2>👥 Team Members</h2>
       <ul>
         {project.team_members.map(({ member, position, role }) => {
-          return <li key={member.id}>{member.real_name}</li>;
+          return (
+            <li key={member.id}>
+              <Link href={`/people/${member.id}`}>{member.real_name}</Link>
+            </li>
+          );
         })}
       </ul>
-      <h3>Upcoming Meetings</h3>
+      <h3>📅 Upcoming Meetings</h3>
       <ul>
         {project.meetings.map((meeting) => {
-          const eventURL = new URL("https://www.google.com/calendar/event");
-          eventURL.searchParams.set(
-            "eid",
-            generateBrowserEventInstanceId(
-              meeting.gcal_event_id,
-              meeting.next_meeting
-            )
-          );
           return (
             <li key={meeting.id} suppressHydrationWarning>
-              {meeting.title}
+              <Link href={`/meetings/${meeting.id}`}>{meeting.title}</Link>
               <br />
-              {dayjs(meeting.next_meeting).format("MMM D, h:mm a")}
+              {dayjs(meeting.nextMeeting).format("MMM D, h:mm a")}
               <br />
               <a
-                href={eventURL.toString()}
+                href={meeting.gcalEventLink}
                 target="_blank"
                 rel="noopener noreferrer"
                 suppressHydrationWarning
@@ -101,11 +98,15 @@ export async function getServerSideProps(context) {
   }
 
   for (const meeting of project.meetings) {
-    if (meeting.rrule) {
-      (meeting as any).next_meeting = getNextOccurrence(meeting.rrule);
-    } else {
-      (meeting as any).next_meeting = meeting.start_date;
-    }
+    const nextMeeting = meeting.rrule
+      ? getNextOccurrence(meeting.rrule)
+      : meeting.start_date;
+
+    (meeting as any).nextMeeting = nextMeeting;
+    (meeting as any).gcalEventLink = generateEventLink(
+      meeting.gcal_event_id,
+      nextMeeting
+    );
   }
 
   return {
