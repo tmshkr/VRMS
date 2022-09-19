@@ -1,7 +1,6 @@
 import { getToken } from "next-auth/jwt";
 import Head from "next/head";
 import prisma from "lib/prisma";
-import { getMongoClient } from "common/mongo";
 import { getNextOccurrence } from "common/rrule";
 import dayjs from "common/dayjs";
 
@@ -72,7 +71,7 @@ export async function getServerSideProps(context) {
     };
   }
 
-  const meeting = await prisma.meeting.findUniqueOrThrow({
+  const meeting = await prisma.meeting.findUnique({
     where: { id },
     select: {
       id: true,
@@ -82,6 +81,15 @@ export async function getServerSideProps(context) {
     },
   });
 
+  if (!meeting) {
+    return {
+      redirect: {
+        destination: `/meetings`,
+        permanent: false,
+      },
+    };
+  }
+
   // 30 minute checkin window
   const checkinWindowStart = dayjs().subtract(15, "minute");
   const checkinWindowEnd = dayjs().add(15, "minute");
@@ -90,44 +98,35 @@ export async function getServerSideProps(context) {
     ? getNextOccurrence(meeting.rrule, checkinWindowStart.toDate())
     : meeting.start_date;
 
-  let outsideCheckinWindow;
   if (
-    checkinWindowStart.isSameOrBefore(meeting_date) &&
-    checkinWindowEnd.isSameOrAfter(meeting_date)
+    !checkinWindowStart.isSameOrBefore(meeting_date) ||
+    !checkinWindowEnd.isSameOrAfter(meeting_date)
   ) {
-    console.log("within checkin window");
-    const mongoClient = await getMongoClient();
-    var { alreadyCheckedIn, insertedCount } = await mongoClient
-      .db()
-      .collection("meetingCheckins")
-      .insert({
-        _id: {
-          user_id: user.id,
-          meeting_id: meeting.id,
-          meeting_date: meeting_date,
-        },
-        checkin_date: new Date(),
-      })
-      .catch((err) => {
-        if (err.code === 11000) {
-          console.log("already checked in");
-          return { alreadyCheckedIn: true };
-        }
-      });
-  } else {
-    console.log("outside checkin window");
-    outsideCheckinWindow = true;
+    return {
+      props: {
+        meeting: { title: meeting.title },
+        message: "It looks like you're outside the checkin window",
+      },
+    };
   }
 
   let message;
-  if (alreadyCheckedIn) {
-    message = "It looks like you already checked in";
-  } else if (insertedCount === 1) {
-    message = "Thanks for checking in";
-  } else if (outsideCheckinWindow) {
-    message = "It looks like you're outside the checkin window";
-  } else {
-    message = "There was a problem checking you in";
+  try {
+    await prisma.meetingCheckin.create({
+      data: {
+        meeting_id: meeting.id,
+        user_id: user.id,
+        meeting_date,
+      },
+    });
+    message = "Thanks for checking in!";
+  } catch (err: any) {
+    if (err.code === "P2002") {
+      message = "It looks like you've already checked in to this meeting";
+    } else {
+      console.error(err);
+      message = "There was a problem checking you in";
+    }
   }
 
   return {
