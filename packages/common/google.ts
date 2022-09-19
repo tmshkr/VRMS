@@ -1,12 +1,16 @@
 const { google } = require("googleapis");
 import dayjs from "./dayjs";
-const auth = new google.auth.GoogleAuth({
-  credentials: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_KEY_JSON || ""),
-  scopes: ["https://www.googleapis.com/auth/calendar.events"],
-});
+
+function getAuth() {
+  const auth = new google.auth.GoogleAuth({
+    credentials: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_KEY_JSON || ""),
+    scopes: ["https://www.googleapis.com/auth/calendar.events"],
+  });
+  return auth;
+}
 
 export async function createCalendarEvent(event) {
-  const calendar = google.calendar({ version: "v3", auth });
+  const calendar = google.calendar({ version: "v3", auth: getAuth() });
   const { data } = await calendar.events.insert({
     calendarId: process.env.GOOGLE_CALENDAR_ID,
     resource: event,
