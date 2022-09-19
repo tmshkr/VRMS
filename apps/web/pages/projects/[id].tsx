@@ -1,9 +1,14 @@
 import type { NextPage } from "next";
 import Head from "next/head";
+import Link from "next/link";
 import prisma from "lib/prisma";
+import dayjs from "common/dayjs";
+import { getNextOccurrence } from "common/rrule";
+import { generateEventLink } from "common/google";
 
 const Projects: NextPage = (props: any) => {
   const { project } = props;
+
   return (
     <>
       <Head>
@@ -12,6 +17,37 @@ const Projects: NextPage = (props: any) => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <h1>{project.name}</h1>
+      <h2>👥 Team Members</h2>
+      <ul>
+        {project.team_members.map(({ member, position, role }) => {
+          return (
+            <li key={member.id}>
+              <Link href={`/people/${member.id}`}>{member.real_name}</Link>
+            </li>
+          );
+        })}
+      </ul>
+      <h3>📅 Upcoming Meetings</h3>
+      <ul>
+        {project.meetings.map((meeting) => {
+          return (
+            <li key={meeting.id} suppressHydrationWarning>
+              <Link href={`/meetings/${meeting.id}`}>{meeting.title}</Link>
+              <br />
+              {dayjs(meeting.nextMeeting).format("MMM D, h:mm a")}
+              <br />
+              <a
+                href={meeting.gcalEventLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                suppressHydrationWarning
+              >
+                Add to Calendar
+              </a>
+            </li>
+          );
+        })}
+      </ul>
     </>
   );
 };
@@ -35,8 +71,44 @@ export async function getServerSideProps(context) {
     select: {
       id: true,
       name: true,
+      meetings: {
+        select: {
+          id: true,
+          gcal_event_id: true,
+          start_date: true,
+          rrule: true,
+          slack_channel_id: true,
+          title: true,
+        },
+      },
+      team_members: {
+        select: {
+          role: true,
+          position: true,
+          member: { select: { id: true, real_name: true } },
+        },
+      },
     },
   });
+
+  if (!project) {
+    return {
+      notFound: true,
+    };
+  }
+
+  for (const meeting of project.meetings) {
+    const nextMeeting = meeting.rrule
+      ? getNextOccurrence(meeting.rrule)
+      : meeting.start_date;
+
+    (meeting as any).nextMeeting = nextMeeting;
+    (meeting as any).gcalEventLink = generateEventLink(
+      meeting.gcal_event_id,
+      nextMeeting
+    );
+  }
+
   return {
     props: { project },
   };
