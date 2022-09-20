@@ -146,10 +146,8 @@ model Meeting {
   checkins         MeetingCheckin[]
   created_by_id    Int
   duration         Int // in minutes
-  gcal_event_id    String
-  gcal_event_link  String
+  gcal_event_id    String           @unique
   is_active        Boolean          @default(true)
-  join_url         String?
   project_id       Int
   rrule            String?
   slack_channel_id String
