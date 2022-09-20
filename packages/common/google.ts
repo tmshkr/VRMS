@@ -37,3 +37,12 @@ export function generateEventLink(gcalEventId, startDate) {
 
   return gcalEventLink.toString();
 }
+
+export async function getEvents(calendarId) {
+  const calendar = google.calendar({ version: "v3", auth: getAuth() });
+  const { data } = await calendar.events.list({
+    calendarId,
+    singleEvents: false,
+  });
+  return data;
+}
