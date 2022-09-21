@@ -5,7 +5,7 @@ import dayjs from "common/dayjs";
 import { getAgenda } from "lib/agenda";
 import { getHomeTab } from "app/views/home";
 import { getInnerValues } from "utils/getInnerValues";
-import { createCalendarEvent } from "common/google";
+import { createCalendarEvent, patchCalendarEvent } from "common/google";
 
 export const createMeeting = async ({ ack, body, view, client, logger }) => {
   await ack();
@@ -86,11 +86,6 @@ export const createMeeting = async ({ ack, body, view, client, logger }) => {
       timeZone: "America/Los_Angeles",
     },
     recurrence: [rule?.toString().split("\n")[1]],
-    extendedProperties: {
-      private: {
-        vrms_project_id: Number(meeting_project.selected_option.value),
-      },
-    },
   });
 
   const newMeeting = await prisma.meeting.create({
@@ -109,6 +104,15 @@ export const createMeeting = async ({ ack, body, view, client, logger }) => {
           user_id: id,
           added_by_id: meetingCreator.id,
         })),
+      },
+    },
+  });
+
+  await patchCalendarEvent(gcalEvent.id, {
+    extendedProperties: {
+      private: {
+        vrms_meeting_id: newMeeting.id,
+        vrms_project_id: Number(meeting_project.selected_option.value),
       },
     },
   });

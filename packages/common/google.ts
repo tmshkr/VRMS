@@ -18,6 +18,16 @@ export async function createCalendarEvent(event) {
   return data;
 }
 
+export async function patchCalendarEvent(eventId, requestBody) {
+  const calendar = google.calendar({ version: "v3", auth: getAuth() });
+  const { data } = await calendar.events.patch({
+    calendarId: process.env.GOOGLE_CALENDAR_ID,
+    eventId,
+    requestBody,
+  });
+  return data;
+}
+
 export function generateEventInstanceId(gcalEventId, startDate) {
   return Buffer.from(
     `${gcalEventId}_${dayjs(startDate).utc().format("YYYYMMDDTHHmmss[Z]")} ${
@@ -38,6 +48,7 @@ export function generateEventLink(gcalEventId, startDate) {
   return gcalEventLink.toString();
 }
 
+// TODO: fetch paginated results
 export async function getEvents(calendarId, syncToken) {
   const calendar = google.calendar({ version: "v3", auth: getAuth() });
   try {
