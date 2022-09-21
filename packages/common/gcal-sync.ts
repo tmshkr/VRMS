@@ -2,17 +2,34 @@ require("dotenv").config({ path: "../../.env" });
 
 import { PrismaClient } from "@prisma/client";
 const prisma: PrismaClient = new PrismaClient();
-import { getEvents } from "common/google";
+import { getMongoClient } from "./mongo";
+import { getEvents } from "./google";
 import dayjs from "dayjs";
 
-let syncToken;
-
 export async function syncMeetings() {
+  const mongoClient = await getMongoClient();
+  const doc = await mongoClient
+    .db()
+    .collection("config")
+    .findOne({ _id: "GCAL_SYNC_TOKEN" });
+
   const { items, nextSyncToken } = await getEvents(
     process.env.GOOGLE_CALENDAR_ID,
-    syncToken
+    doc?.syncToken
   );
-  syncToken = nextSyncToken;
+
+  await mongoClient
+    .db()
+    .collection("config")
+    .updateOne(
+      { _id: "GCAL_SYNC_TOKEN" },
+      {
+        $set: { syncToken: nextSyncToken, updatedAt: new Date() },
+        $setOnInsert: { createdAt: new Date() },
+      },
+      { upsert: true }
+    );
+  await mongoClient.close();
 
   const events = items.reduce((acc, cur) => {
     acc[cur.id] = cur;
