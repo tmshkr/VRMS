@@ -140,11 +140,18 @@ enum MeetingType {
   SYNCHRONOUS
 }
 
+enum MeetingStatus {
+  CONFIRMED
+  TENTATIVE
+  CANCELLED
+}
+
 model Meeting {
   id Int @id @default(autoincrement())
 
   checkins         MeetingCheckin[]
   created_by_id    Int
+  description      String?
   duration         Int // in minutes
   gcal_event_id    String           @unique
   is_active        Boolean          @default(true)
@@ -152,6 +159,7 @@ model Meeting {
   rrule            String?
   slack_channel_id String
   start_date       DateTime
+  status           MeetingStatus    @default(CONFIRMED)
   title            String
   type             MeetingType
 
@@ -159,8 +167,25 @@ model Meeting {
   updated_at DateTime @default(now()) @updatedAt
 
   created_by_user User                 @relation(fields: [created_by_id], references: [id])
+  exceptions      MeetingException[]
   participants    MeetingParticipant[]
   project         Project              @relation(fields: [project_id], references: [id])
+}
+
+model MeetingException {
+  meeting_id Int
+  date       DateTime
+
+  start_time  DateTime
+  title       String?
+  description String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @default(now()) @updatedAt
+
+  meeting Meeting @relation(fields: [meeting_id], references: [id], onDelete: Cascade)
+
+  @@id([meeting_id, date])
 }
 
 model MeetingParticipant {

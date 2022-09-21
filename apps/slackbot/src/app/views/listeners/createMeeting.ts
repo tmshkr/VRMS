@@ -98,7 +98,6 @@ export const createMeeting = async ({ ack, body, view, client, logger }) => {
       created_by_id: meetingCreator.id,
       duration: Number(meeting_duration.selected_option.value.split(" ")[0]),
       gcal_event_id: gcalEvent.id,
-      gcal_event_link: gcalEvent.htmlLink,
       project_id: Number(meeting_project.selected_option.value),
       rrule: rule?.toString(),
       slack_channel_id: meeting_channel.selected_channel,

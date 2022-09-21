@@ -5,7 +5,7 @@ import { getNextOccurrence } from "common/rrule";
 export function registerJobs(agenda) {
   agenda.define("sendMeetingCheckin", async (job) => {
     const { meeting_id } = job.attrs.data;
-    const { slack_channel_id, rrule, join_url } = await prisma.meeting
+    const { slack_channel_id, rrule } = await prisma.meeting
       .findUnique({
         where: { id: meeting_id },
       })
