@@ -4,7 +4,7 @@ import { PrismaClient } from "@prisma/client";
 const prisma: PrismaClient = new PrismaClient();
 import { getMongoClient } from "./mongo";
 import { getEvents } from "./google";
-import dayjs from "dayjs";
+import dayjs from "common/dayjs";
 
 export async function syncMeetings() {
   const mongoClient = await getMongoClient();
@@ -17,6 +17,8 @@ export async function syncMeetings() {
     process.env.GOOGLE_CALENDAR_ID,
     doc?.syncToken
   );
+
+  console.log(items);
 
   await mongoClient
     .db()
@@ -44,8 +46,9 @@ export async function syncMeetings() {
     const event = events[meeting.gcal_event_id];
 
     if (event.status === "cancelled") {
-      const result = await prisma.meeting.delete({
+      const result = await prisma.meeting.update({
         where: { gcal_event_id: event.id },
+        data: { status: "CANCELLED" },
       });
       console.log("deleted", result);
       continue;
@@ -59,6 +62,11 @@ export async function syncMeetings() {
     if (!eventStartTime.isSame(meetingStartTime)) {
       console.log(`updating meeting ${meeting.id} start_date`);
       update.start_date = eventStartTime.toDate();
+      if (event.recurrence[0]) {
+        update.rrule = `DTSTART;TZID=America/Los_Angeles:${eventStartTime
+          .tz("America/Los_Angeles")
+          .format("YYYYMMDDTHHmmss")}\n${event.recurrence[0]}`;
+      }
     }
 
     if (Object.keys(update).length > 0) {
@@ -71,3 +79,4 @@ export async function syncMeetings() {
 }
 
 syncMeetings();
+// TODO: set up watch channel
