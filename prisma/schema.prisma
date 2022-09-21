@@ -48,7 +48,7 @@ model Account {
   created_at DateTime @default(now())
   updated_at DateTime @default(now()) @updatedAt
 
-  user User @relation(fields: [vrms_user_id], references: [id], onDelete: Cascade)
+  user User @relation(fields: [vrms_user_id], references: [id])
 
   @@id([provider, provider_account_id])
   @@unique([provider, vrms_user_id])
@@ -176,9 +176,10 @@ model MeetingException {
   meeting_id Int
   date       DateTime
 
-  start_time  DateTime
-  title       String?
-  description String?
+  gcal_event_id String   @unique
+  start_time    DateTime
+  title         String?
+  description   String?
 
   created_at DateTime @default(now())
   updated_at DateTime @default(now()) @updatedAt
