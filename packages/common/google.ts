@@ -40,10 +40,23 @@ export function generateEventLink(gcalEventId, startDate) {
 
 export async function getEvents(calendarId, syncToken) {
   const calendar = google.calendar({ version: "v3", auth: getAuth() });
-  const { data } = await calendar.events.list({
-    calendarId,
-    singleEvents: false,
-    syncToken,
-  });
+  try {
+    var { data } = await calendar.events.list({
+      calendarId,
+      singleEvents: false,
+      syncToken,
+    });
+  } catch (err: any) {
+    if (err.response.status === 410) {
+      console.log("sync token expired, resetting");
+      var { data } = await calendar.events.list({
+        calendarId,
+        singleEvents: false,
+      });
+    } else {
+      throw err;
+    }
+  }
+
   return data;
 }
