@@ -1,9 +1,14 @@
 const { google } = require("googleapis");
-import dayjs from "./dayjs";
+import dayjs from "../dayjs";
 
-function getAuth() {
+export function getAuth() {
+  const credentials = JSON.parse(
+    process.env.GOOGLE_SERVICE_ACCOUNT_KEY_JSON || ""
+  );
+  credentials.private_key = credentials.private_key.replace(/\\n/g, "\n");
+
   const auth = new google.auth.GoogleAuth({
-    credentials: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_KEY_JSON || ""),
+    credentials,
     scopes: ["https://www.googleapis.com/auth/calendar.events"],
   });
   return auth;
@@ -58,7 +63,7 @@ export async function getEvents(calendarId, syncToken) {
       syncToken,
     });
   } catch (err: any) {
-    if (err.response.status === 410) {
+    if (err.response?.status === 410) {
       console.log("sync token expired, resetting");
       var { data } = await calendar.events.list({
         calendarId,
