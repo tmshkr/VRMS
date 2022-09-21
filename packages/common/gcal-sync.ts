@@ -46,11 +46,10 @@ export async function syncMeetings() {
     const event = events[meeting.gcal_event_id];
 
     if (event.status === "cancelled") {
-      const result = await prisma.meeting.update({
+      await prisma.meeting.update({
         where: { gcal_event_id: event.id },
         data: { status: "CANCELLED" },
       });
-      console.log("deleted", result);
       continue;
     }
 
@@ -67,6 +66,16 @@ export async function syncMeetings() {
           .tz("America/Los_Angeles")
           .format("YYYYMMDDTHHmmss")}\n${event.recurrence[0]}`;
       }
+    }
+
+    if (event.summary !== meeting.title) {
+      console.log(`updating meeting ${meeting.id} title`);
+      update.title = event.summary;
+    }
+
+    if (event.description !== meeting.description) {
+      console.log(`updating meeting ${meeting.id} description`);
+      update.description = event.description;
     }
 
     if (Object.keys(update).length > 0) {
