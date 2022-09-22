@@ -91,18 +91,24 @@ export const createMeeting = async ({ ack, body, view, client, logger }) => {
   const newMeeting = await prisma.meeting.create({
     data: {
       created_by_id: meetingCreator.id,
-      duration: Number(meeting_duration.selected_option.value.split(" ")[0]),
+      end_time: dayjs(start_date)
+        .add(
+          Number(meeting_duration.selected_option.value.split(" ")[0]),
+          "minutes"
+        )
+        .toDate(),
       gcal_event_id: gcalEvent.id,
       project_id: Number(meeting_project.selected_option.value),
       rrule: rule?.toString(),
       slack_channel_id: meeting_channel.selected_channel,
-      start_date: start_date.utc().format(),
+      start_time: start_date.toDate(),
       title: meeting_title.value,
       type: "SYNCHRONOUS",
       participants: {
         create: participants.map(({ id }) => ({
           user_id: id,
           added_by_id: meetingCreator.id,
+          instance: start_date.toDate(),
         })),
       },
     },

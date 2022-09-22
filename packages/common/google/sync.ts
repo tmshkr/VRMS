@@ -7,11 +7,6 @@ import { getEvents, getAuth } from "./index";
 import dayjs from "common/dayjs";
 const { google } = require("googleapis");
 
-enum EventType {
-  meeting = "meeting",
-  meetingException = "meetingException",
-}
-
 export async function syncMeetings() {
   const mongoClient = await getMongoClient();
   const doc = await mongoClient
@@ -23,23 +18,14 @@ export async function syncMeetings() {
     process.env.GOOGLE_CALENDAR_ID,
     doc?.syncToken
   );
-
   console.log(items);
 
   const events = {};
-  const exceptions = {};
-
   for (const item of items) {
-    if (/_/.test(item.id)) {
-      exceptions[item.id] = item;
-    } else {
-      events[item.id] = item;
-    }
+    events[item.id] = item;
   }
-  console.log({ events, exceptions });
 
-  handleUpdate(EventType.meeting, events);
-  handleUpdate(EventType.meetingException, exceptions);
+  await handleUpdate(events);
 
   await mongoClient
     .db()
@@ -54,18 +40,11 @@ export async function syncMeetings() {
     );
 }
 
-async function handleUpdate(eventType: EventType, events) {
+async function handleUpdate(events) {
   const eventIds = Object.keys(events);
-  let records;
-  if (eventType === EventType.meeting) {
-    records = await prisma.meeting.findMany({
-      where: { gcal_event_id: { in: eventIds } },
-    });
-  } else if (eventType === EventType.meetingException) {
-    records = await prisma.meetingException.findMany({
-      where: { gcal_event_id: { in: eventIds } },
-    });
-  }
+  const records = await prisma.meeting.findMany({
+    where: { gcal_event_id: { in: eventIds } },
+  });
 
   // find the events that weren't found in the database,
   // so that we can create them, as long as they have a vrms_meeting_id
@@ -78,26 +57,36 @@ async function handleUpdate(eventType: EventType, events) {
 
   eventsToCreate.forEach(async (eventId) => {
     const event = events[eventId];
-    const meeting_id = Number(event.extendedProperties.private.vrms_meeting_id);
+    const meeting_id = Number(
+      event.extendedProperties?.private?.vrms_meeting_id
+    );
     if (meeting_id) {
-      if (eventType === EventType.meeting) {
-        // await prisma.meeting.create({
-        //   data: {å
-        //     gcal_event_id: String(event.id),
-        //   },
-        // });
-      } else if (eventType === EventType.meetingException) {
-        await prisma.meetingException.create({
-          data: {
-            instance: new Date(event.originalStartTime.dateTime),
-            meeting_id,
-            gcal_event_id: String(event.id),
-            start_date: new Date(event.start.dateTime),
-            title: event.summary,
-            description: event.description,
-          },
-        });
-      }
+      // get original meeting
+      const recurring_event = await prisma.meeting.findUniqueOrThrow({
+        where: {
+          id: meeting_id,
+        },
+      });
+      // create exception or new meeting
+      await prisma.meeting.create({
+        data: {
+          created_by_id: recurring_event.created_by_id,
+          end_time: new Date(event.end.dateTime),
+          gcal_event_id: String(event.id),
+          project_id: recurring_event.project_id,
+          slack_channel_id: recurring_event.slack_channel_id,
+          recurring_event_id: meeting_id,
+          rrule: event.recurrence?.[0]
+            ? `DTSTART;TZID=America/Los_Angeles:${dayjs(event.start.dateTime)
+                .tz("America/Los_Angeles")
+                .format("YYYYMMDDTHHmmss")}\n${event.recurrence[0]}`
+            : null,
+          start_time: new Date(event.start.dateTime),
+          title: String(event.summary),
+          type: "SYNCHRONOUS",
+          description: event.description,
+        },
+      });
     }
   });
 
@@ -105,7 +94,7 @@ async function handleUpdate(eventType: EventType, events) {
     const event = events[record.gcal_event_id];
 
     const eventStartTime = dayjs(event.start.dateTime);
-    const meetingStartTime = dayjs(record.start_date);
+    const meetingStartTime = dayjs(record.start_time);
 
     const update: any = {};
 
@@ -114,12 +103,13 @@ async function handleUpdate(eventType: EventType, events) {
     }
 
     if (!eventStartTime.isSame(meetingStartTime)) {
-      update.start_date = eventStartTime.toDate();
-      if (event.recurrence && event.recurrence[0]) {
-        update.rrule = `DTSTART;TZID=America/Los_Angeles:${eventStartTime
-          .tz("America/Los_Angeles")
-          .format("YYYYMMDDTHHmmss")}\n${event.recurrence[0]}`;
-      }
+      update.start_time = eventStartTime.toDate();
+    }
+
+    if (event.recurrence?.[0] !== record.rrule?.split("\n")[1]) {
+      update.rrule = `DTSTART;TZID=America/Los_Angeles:${eventStartTime
+        .tz("America/Los_Angeles")
+        .format("YYYYMMDDTHHmmss")}\n${event.recurrence[0]}`;
     }
 
     if (event.summary !== record.title) {
@@ -131,17 +121,10 @@ async function handleUpdate(eventType: EventType, events) {
     }
 
     if (Object.keys(update).length > 0) {
-      if (eventType === EventType.meeting) {
-        await prisma.meeting.update({
-          where: { gcal_event_id: event.id },
-          data: update,
-        });
-      } else if (eventType === EventType.meetingException) {
-        await prisma.meetingException.update({
-          where: { gcal_event_id: event.id },
-          data: update,
-        });
-      }
+      await prisma.meeting.update({
+        where: { gcal_event_id: event.id },
+        data: update,
+      });
     }
   }
 }
@@ -153,6 +136,7 @@ async function createWatchChannel() {
     requestBody: {
       id: Date.now(),
       type: "web_hook",
+      token: require("crypto").randomBytes(32).toString("hex"),
       address: process.env.NGROK_URL // ngrok can be used in development
         ? `${process.env.NGROK_URL}/api/google/calendar/watch`
         : `${process.env.NEXTAUTH_URL}/api/google/calendar/watch`,
@@ -188,3 +172,5 @@ export async function init() {
 
   syncMeetings();
 }
+
+// init();

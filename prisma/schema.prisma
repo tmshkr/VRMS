@@ -149,50 +149,36 @@ enum MeetingStatus {
 model Meeting {
   id Int @id @default(autoincrement())
 
-  checkins         MeetingCheckin[]
   created_by_id    Int
   description      String?
-  duration         Int // in minutes
-  gcal_event_id    String           @unique
-  is_active        Boolean          @default(true)
+  end_time         DateTime
+  gcal_event_id    String        @unique
+  is_active        Boolean       @default(true)
   project_id       Int
   rrule            String?
   slack_channel_id String
-  start_date       DateTime
-  status           MeetingStatus    @default(CONFIRMED)
+  start_time       DateTime
+  status           MeetingStatus @default(CONFIRMED)
   title            String
   type             MeetingType
 
+  recurring_event_id Int?
+  recurring_event    Meeting?  @relation("RecurringEvent", fields: [recurring_event_id], references: [id])
+  exceptions         Meeting[] @relation("RecurringEvent")
+
   created_at DateTime @default(now())
   updated_at DateTime @default(now()) @updatedAt
 
+  checkins        MeetingCheckin[]
   created_by_user User                 @relation(fields: [created_by_id], references: [id])
-  exceptions      MeetingException[]
   participants    MeetingParticipant[]
   project         Project              @relation(fields: [project_id], references: [id])
-}
-
-model MeetingException {
-  meeting_id Int
-  instance   DateTime
-
-  description   String?
-  gcal_event_id String        @unique
-  start_date    DateTime
-  status        MeetingStatus @default(CONFIRMED)
-  title         String?
-
-  created_at DateTime @default(now())
-  updated_at DateTime @default(now()) @updatedAt
-
-  meeting Meeting @relation(fields: [meeting_id], references: [id], onDelete: Cascade)
-
-  @@id([meeting_id, instance])
 }
 
 model MeetingParticipant {
   meeting_id Int
   user_id    Int
+  instance   DateTime
 
   added_by_id Int
   is_active   Boolean @default(true)
@@ -204,14 +190,14 @@ model MeetingParticipant {
   meeting       Meeting @relation(fields: [meeting_id], references: [id], onDelete: Cascade)
   participant   User    @relation(fields: [user_id], references: [id])
 
-  @@id([meeting_id, user_id])
+  @@id([meeting_id, user_id, instance])
   @@index(user_id)
 }
 
 model MeetingCheckin {
-  meeting_id   Int
-  user_id      Int
-  meeting_date DateTime
+  meeting_id Int
+  user_id    Int
+  instance   DateTime
 
   created_at DateTime @default(now())
   updated_at DateTime @default(now()) @updatedAt
@@ -219,7 +205,7 @@ model MeetingCheckin {
   meeting Meeting @relation(fields: [meeting_id], references: [id], onDelete: Cascade)
   user    User    @relation(fields: [user_id], references: [id])
 
-  @@id([meeting_id, user_id, meeting_date])
+  @@id([meeting_id, user_id, instance])
   @@index(meeting_id)
   @@index(user_id)
 }
