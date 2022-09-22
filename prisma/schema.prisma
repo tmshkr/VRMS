@@ -174,19 +174,20 @@ model Meeting {
 
 model MeetingException {
   meeting_id Int
-  date       DateTime
+  instance   DateTime
 
-  gcal_event_id String   @unique
-  start_time    DateTime
-  title         String?
   description   String?
+  gcal_event_id String        @unique
+  start_date    DateTime
+  status        MeetingStatus @default(CONFIRMED)
+  title         String?
 
   created_at DateTime @default(now())
   updated_at DateTime @default(now()) @updatedAt
 
   meeting Meeting @relation(fields: [meeting_id], references: [id], onDelete: Cascade)
 
-  @@id([meeting_id, date])
+  @@id([meeting_id, instance])
 }
 
 model MeetingParticipant {
