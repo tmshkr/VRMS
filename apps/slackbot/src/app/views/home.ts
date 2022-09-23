@@ -1,7 +1,7 @@
 import prisma from "common/prisma";
 import dayjs from "common/dayjs";
 import { generateEventInstanceId } from "common/google";
-import { getNextOccurrence } from "common/rrule";
+import { getNextOccurrence } from "common/meetings";
 import axios from "axios";
 const jwt = require("jsonwebtoken");
 
@@ -26,9 +26,13 @@ export const getHomeTab = async (slack_id: string) => {
           select: { project: true },
         },
         meeting_assignments: {
+          where: { meeting: { status: "CONFIRMED" } },
           select: {
-            meeting: true,
+            meeting: {
+              include: { exceptions: { where: { status: "CONFIRMED" } } },
+            },
           },
+          orderBy: { meeting: { start_time: "asc" } },
         },
       },
     })
@@ -159,9 +163,7 @@ function renderProject(project) {
 }
 
 function renderMeeting(meeting) {
-  const nextMeeting = meeting.rrule
-    ? getNextOccurrence(meeting.rrule)
-    : meeting.start_date;
+  const nextMeeting = getNextOccurrence(meeting);
 
   const url = new URL("https://www.google.com/calendar/event");
   url.searchParams.set(
