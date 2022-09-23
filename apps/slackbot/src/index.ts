@@ -4,6 +4,7 @@ if (process.env.NODE_ENV !== "production") {
 
 import { app } from "app";
 import { getAgenda } from "lib/agenda";
+import { initSync } from "common/google/sync";
 
 (async () => {
   await app.start(process.env.PORT || 3000);
@@ -11,4 +12,5 @@ import { getAgenda } from "lib/agenda";
   const agenda = await getAgenda();
   agenda.start();
   console.log("Agenda started");
+  initSync();
 })();
