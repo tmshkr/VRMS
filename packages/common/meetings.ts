@@ -4,7 +4,6 @@ import { Meeting, MeetingException } from "@prisma/client";
 export function getNextOccurrence(
   meeting: Meeting & { exceptions: MeetingException[] }
 ): Date | null {
-  console.log(meeting);
   if (!meeting.rrule) {
     return meeting.start_time > new Date() ? meeting.start_time : null;
   }
@@ -20,7 +19,9 @@ export function getNextOccurrence(
   );
 
   const exception = meeting.exceptions.find(
-    ({ instance }) => nextInstance.valueOf() === instance.valueOf()
+    ({ start_time }) =>
+      Date.now() < start_time.valueOf() &&
+      start_time.valueOf() < nextInstance.valueOf()
   );
 
   return exception ? exception.start_time : nextInstance;
