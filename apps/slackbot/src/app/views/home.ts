@@ -1,4 +1,4 @@
-import prisma from "lib/prisma";
+import prisma from "common/prisma";
 import dayjs from "common/dayjs";
 import { generateEventInstanceId } from "common/google";
 import { getNextOccurrence } from "common/rrule";

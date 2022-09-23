@@ -1,5 +1,5 @@
 import { Agenda } from "agenda/es";
-import { getMongoClient } from "../mongo";
+import { getMongoClient } from "common/mongo";
 import { registerJobs } from "./jobs";
 
 let agenda;

@@ -1,6 +1,6 @@
 import { app } from "app";
 import { getHomeTab } from "./views/home";
-import prisma from "lib/prisma";
+import prisma from "common/prisma";
 
 export const registerEvents = () => {
   app.event("app_home_opened", async ({ event, client, logger }) => {

@@ -1,6 +1,6 @@
 import { getToken } from "next-auth/jwt";
 import Head from "next/head";
-import prisma from "lib/prisma";
+import prisma from "common/prisma";
 import { getNextOccurrence } from "common/rrule";
 import dayjs from "common/dayjs";
 
@@ -77,9 +77,12 @@ export async function getServerSideProps(context) {
       id: true,
       title: true,
       rrule: true,
-      start_date: true,
+      start_time: true,
+      exceptions: true,
     },
   });
+
+  // figure out if this meeting is an exception
 
   if (!meeting) {
     return {
@@ -94,13 +97,13 @@ export async function getServerSideProps(context) {
   const checkinWindowStart = dayjs().subtract(15, "minute");
   const checkinWindowEnd = dayjs().add(15, "minute");
 
-  const meeting_date = meeting.rrule
+  const meeting_time = meeting.rrule
     ? getNextOccurrence(meeting.rrule, checkinWindowStart.toDate())
-    : meeting.start_date;
+    : meeting.start_time;
 
   if (
-    !checkinWindowStart.isSameOrBefore(meeting_date) ||
-    !checkinWindowEnd.isSameOrAfter(meeting_date)
+    !checkinWindowStart.isSameOrBefore(meeting_time) ||
+    !checkinWindowEnd.isSameOrAfter(meeting_time)
   ) {
     return {
       props: {
@@ -116,7 +119,7 @@ export async function getServerSideProps(context) {
       data: {
         meeting_id: meeting.id,
         user_id: user.id,
-        meeting_date,
+        original_start_time: meeting_time,
       },
     });
     message = "Thanks for checking in!";

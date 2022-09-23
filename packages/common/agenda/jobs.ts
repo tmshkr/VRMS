@@ -1,5 +1,5 @@
-import prisma from "lib/prisma";
-import { sendMeetingCheckin } from "app/notifications";
+import prisma from "common/prisma";
+import { sendMeetingCheckin } from "common/slack/notifications";
 import { getNextOccurrence } from "common/rrule";
 
 export function registerJobs(agenda) {

@@ -1,4 +1,4 @@
-import prisma from "lib/prisma";
+import prisma from "common/prisma";
 import Link from "next/link";
 
 export default function Web({ people }) {

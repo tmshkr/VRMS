@@ -1,7 +1,7 @@
 import NextAuth from "next-auth";
 import GitHubProvider from "next-auth/providers/github";
-import prisma from "lib/prisma";
-import { getMongoClient } from "lib/mongo";
+import prisma from "common/prisma";
+import { getMongoClient } from "common/mongo";
 
 // For more information on each option (and a full list of options) go to
 // https://next-auth.js.org/configuration/options

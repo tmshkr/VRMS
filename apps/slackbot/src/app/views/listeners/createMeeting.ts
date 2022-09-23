@@ -1,8 +1,8 @@
-import prisma from "lib/prisma";
+import prisma from "common/prisma";
 import { RRule } from "rrule";
 import { getFakeUTC } from "common/rrule";
 import dayjs from "common/dayjs";
-import { getAgenda } from "lib/agenda";
+import { getAgenda } from "common/agenda";
 import { getHomeTab } from "app/views/home";
 import { getInnerValues } from "utils/getInnerValues";
 import { createCalendarEvent, patchCalendarEvent } from "common/google";

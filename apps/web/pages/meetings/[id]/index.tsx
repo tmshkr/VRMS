@@ -1,6 +1,6 @@
 import type { NextPage } from "next";
 import Head from "next/head";
-import prisma from "lib/prisma";
+import prisma from "common/prisma";
 import dayjs from "common/dayjs";
 import Link from "next/link";
 import { getNextOccurrence } from "common/rrule";
@@ -65,7 +65,7 @@ export async function getServerSideProps(context) {
     select: {
       id: true,
       gcal_event_id: true,
-      start_date: true,
+      start_time: true,
       rrule: true,
       slack_channel_id: true,
       title: true,
@@ -92,7 +92,7 @@ export async function getServerSideProps(context) {
 
   const nextMeeting = meeting.rrule
     ? getNextOccurrence(meeting.rrule)
-    : meeting.start_date;
+    : meeting.start_time;
 
   return {
     props: {

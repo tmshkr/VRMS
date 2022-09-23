@@ -1,8 +1,8 @@
 import jwt from "jsonwebtoken";
 import { getToken } from "next-auth/jwt";
-import { getMongoClient } from "lib/mongo";
-import prisma from "lib/prisma";
-import { notifyAccountConnected } from "lib/slack";
+import { getMongoClient } from "common/mongo";
+import prisma from "common/prisma";
+import { notifyAccountConnected } from "common/slack/notifications";
 
 export default async function handler(req, res) {
   const nextToken = await getToken({ req });

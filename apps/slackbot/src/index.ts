@@ -3,7 +3,7 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 import { app } from "app";
-import { getAgenda } from "lib/agenda";
+import { getAgenda } from "common/agenda";
 import { initSync } from "common/google/sync";
 
 (async () => {
