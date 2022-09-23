@@ -1,5 +1,3 @@
-require("dotenv").config({ path: "../../.env" });
-
 import prisma from "common/prisma";
 import { getMongoClient } from "common/mongo";
 import { getEvents, getAuth } from "./index";
@@ -12,13 +10,12 @@ export async function syncMeetings() {
   const doc = await mongoClient
     .db()
     .collection("gcalSyncTokens")
-    .findOne({ _id: "GCAL_SYNC_TOKEN" });
+    .findOne({ _id: process.env.GOOGLE_CALENDAR_ID });
 
-  const { items, nextSyncToken, ...rest } = await getEvents(
+  const { items, nextSyncToken } = await getEvents(
     process.env.GOOGLE_CALENDAR_ID,
     doc?.syncToken
   );
-  console.log(items, nextSyncToken, rest);
 
   const events = {};
   const exceptions = {};
@@ -37,7 +34,7 @@ export async function syncMeetings() {
     .db()
     .collection("gcalSyncTokens")
     .updateOne(
-      { _id: "GCAL_SYNC_TOKEN" },
+      { _id: process.env.GOOGLE_CALENDAR_ID },
       {
         $set: { syncToken: nextSyncToken, updatedAt: new Date() },
         $setOnInsert: { createdAt: new Date() },
@@ -52,6 +49,7 @@ function isException(event) {
 
 async function handleMeetings(events) {
   const eventIds = Object.keys(events);
+  if (eventIds.length === 0) return;
   const meetings = await prisma.meeting.findMany({
     where: { gcal_event_id: { in: eventIds } },
   });
@@ -123,6 +121,7 @@ function createUpdate(event, record) {
 
 async function handleExceptions(events) {
   const eventIds = Object.keys(events);
+  if (eventIds.length === 0) return;
   const meetingExceptions = await prisma.meetingException.findMany({
     where: { gcal_event_id: { in: eventIds } },
   });
@@ -165,22 +164,27 @@ async function handleCreateMeeting(events, eventId) {
   const meeting_id = Number(event.extendedProperties?.private?.vrms_meeting_id);
   if (!meeting_id) return;
 
-  const meeting = await prisma.meeting.findUnique({
+  const oldMeeting = await prisma.meeting.findUnique({
     where: {
       id: meeting_id,
     },
     // TODO: fetch participants and add them to the new meeting
+    include: {
+      participants: {
+        where: { original_start_time: new Date(0) },
+      },
+    },
   });
 
-  if (!meeting) return;
+  if (!oldMeeting) return;
 
   const newMeeting = await prisma.meeting.create({
     data: {
-      created_by_id: meeting.created_by_id,
+      created_by_id: oldMeeting.created_by_id,
       end_time: new Date(event.end.dateTime),
       gcal_event_id: event.id,
-      project_id: meeting.project_id,
-      slack_channel_id: meeting.slack_channel_id,
+      project_id: oldMeeting.project_id,
+      slack_channel_id: oldMeeting.slack_channel_id,
       rrule: event.recurrence?.[0]
         ? `DTSTART;TZID=America/Los_Angeles:${dayjs(event.start.dateTime)
             .tz("America/Los_Angeles")
@@ -215,16 +219,25 @@ async function handleCreateException(exceptions, eventId) {
 
   if (!recurring_event) return;
 
-  const meetingException = await prisma.meetingException.create({
-    data: {
-      recurring_event_id: recurring_event.id,
-      original_start_time: new Date(event.originalStartTime.dateTime),
-      start_time: new Date(event.start.dateTime),
-      end_time: new Date(event.end.dateTime),
-      gcal_event_id: event.id,
-      title: event.summary,
-      description: event.description,
+  const row = {
+    recurring_event_id: recurring_event.id,
+    original_start_time: new Date(event.originalStartTime.dateTime),
+    start_time: new Date(event.start.dateTime),
+    end_time: new Date(event.end.dateTime),
+    gcal_event_id: event.id,
+    title: event.summary,
+    description: event.description,
+  };
+
+  const meetingException = await prisma.meetingException.upsert({
+    where: {
+      recurring_event_id_original_start_time: {
+        recurring_event_id: recurring_event.id,
+        original_start_time: new Date(event.originalStartTime.dateTime),
+      },
     },
+    create: row,
+    update: row,
   });
   // TODO: handle the Agenda checkin job
 }
@@ -247,17 +260,21 @@ async function createWatchChannel() {
 
 async function stopWatchChannel(id, resourceId) {
   const calendar = google.calendar({ version: "v3", auth: getAuth() });
-  const { data } = await calendar.channels.stop({
+  await calendar.channels.stop({
     requestBody: {
       id,
       resourceId,
     },
   });
-  console.log(data);
-  return data;
+  const mongoClient = await getMongoClient();
+  await mongoClient
+    .db()
+    .collection("gcalWatchChannels")
+    .deleteOne({ id, resourceId });
+  console.log("channel stopped", { id, resourceId });
 }
 
-export async function init() {
+export async function initSync() {
   const mongoClient = await getMongoClient();
   const doc = await mongoClient
     .db()
@@ -268,8 +285,10 @@ export async function init() {
     const channel = await createWatchChannel();
     channel.expiration = Number(channel.expiration);
     await mongoClient.db().collection("gcalWatchChannels").insertOne(channel);
+    console.log("Google Calendar sync channel created");
     // TODO: set up agenda job to refresh channel
   }
 
   syncMeetings();
+  console.log("Google Calendar sync initialized");
 }
