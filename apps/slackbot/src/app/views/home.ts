@@ -32,7 +32,6 @@ export const getHomeTab = async (slack_id: string) => {
               include: { exceptions: { where: { status: "CONFIRMED" } } },
             },
           },
-          orderBy: { meeting: { start_time: "asc" } },
         },
       },
     })
@@ -136,7 +135,14 @@ export const getHomeTab = async (slack_id: string) => {
             action_id: "create_new_meeting",
           },
         },
-        ...meeting_assignments?.map(({ meeting }) => renderMeeting(meeting)),
+        ...meeting_assignments
+          .map(({ meeting }) => renderMeeting(meeting))
+          .filter((block) => !!block)
+          .sort((a: any, b: any) => {
+            const { date: aDate } = JSON.parse(a.block_id);
+            const { date: bDate } = JSON.parse(b.block_id);
+            return dayjs(aDate).isBefore(bDate) ? -1 : 1;
+          }),
         {
           type: "divider",
         },
@@ -171,13 +177,16 @@ function renderMeeting(meeting) {
     generateEventInstanceId(meeting.gcal_event_id, nextMeeting)
   );
 
-  return {
-    type: "section",
-    text: {
-      type: "mrkdwn",
-      text: `:small_blue_diamond: *${meeting.title}* – ${dayjs
-        .tz(nextMeeting)
-        .format("dddd, MMMM D, h:mm a")} – <${url}|Add to Calendar>`,
-    },
-  };
+  return nextMeeting
+    ? {
+        block_id: JSON.stringify({ meeting_id: meeting.id, date: nextMeeting }),
+        type: "section",
+        text: {
+          type: "mrkdwn",
+          text: `:small_blue_diamond: *${meeting.title}* – ${dayjs
+            .tz(nextMeeting)
+            .format("dddd, MMMM D, h:mm a")} – <${url}|Add to Calendar>`,
+        },
+      }
+    : null;
 }
