@@ -168,10 +168,15 @@ async function handleCreateMeeting(events, eventId) {
     where: {
       id: meeting_id,
     },
-    // TODO: fetch participants and add them to the new meeting
     include: {
       participants: {
         where: { original_start_time: new Date(0) },
+        select: {
+          user_id: true,
+          original_start_time: true,
+          added_by_id: true,
+          is_active: true,
+        },
       },
     },
   });
@@ -194,6 +199,7 @@ async function handleCreateMeeting(events, eventId) {
       title: event.summary,
       type: "SYNCHRONOUS",
       description: event.description,
+      participants: { create: oldMeeting.participants },
     },
   });
 
