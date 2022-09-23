@@ -27,7 +27,7 @@ export async function syncMeetings() {
     }
   }
 
-  await handleMeetings(events);
+  await handleEvents(events);
   await handleExceptions(exceptions);
 
   await mongoClient
@@ -47,7 +47,7 @@ function isException(event) {
   return /_/.test(event.id);
 }
 
-async function handleMeetings(events) {
+async function handleEvents(events) {
   const eventIds = Object.keys(events);
   if (eventIds.length === 0) return;
   const meetings = await prisma.meeting.findMany({
@@ -55,14 +55,14 @@ async function handleMeetings(events) {
   });
 
   // create a new Meeting if it wasn't found in the database
-  const meetingsToCreate = new Set(eventIds);
+  const toCreate = new Set(eventIds);
   for (const meeting of meetings) {
-    if (meetingsToCreate.has(meeting.gcal_event_id)) {
-      meetingsToCreate.delete(meeting.gcal_event_id);
+    if (toCreate.has(meeting.gcal_event_id)) {
+      toCreate.delete(meeting.gcal_event_id);
     }
   }
 
-  meetingsToCreate.forEach((eventId) => handleCreateMeeting(events, eventId));
+  toCreate.forEach((eventId) => handleCreateMeeting(events, eventId));
 
   for (const meeting of meetings) {
     const event = events[meeting.gcal_event_id];
@@ -85,37 +85,35 @@ async function handleMeetings(events) {
   }
 }
 
-function createUpdate(event, record) {
-  const update: any = {};
+function generateRRuleFromEvent(event) {
+  return event.recurrence?.[0]
+    ? `DTSTART;TZID=${event.start.timeZone}:${dayjs(event.start.dateTime)
+        .tz(event.start.timeZone)
+        .format("YYYYMMDDTHHmmss")}\n${event.recurrence[0]}`
+    : undefined;
+}
 
+function createUpdate(event, record) {
+  const eventRRule = generateRRuleFromEvent(event);
+  const update: any = {};
   if (event.status.toUpperCase() !== record.status) {
     update.status = event.status.toUpperCase();
   }
-
   if (!dayjs(event.start.dateTime).isSame(record.start_time)) {
     update.start_time = event.start.dateTime;
   }
-
   if (!dayjs(event.end.dateTime).isSame(record.end_time)) {
     update.end_time = event.end.dateTime;
   }
-
-  if (event.recurrence?.[0] !== record.rrule?.split("\n")[1]) {
-    update.rrule = `DTSTART;TZID=America/Los_Angeles:${dayjs(
-      event.start.dateTime
-    )
-      .tz("America/Los_Angeles")
-      .format("YYYYMMDDTHHmmss")}\n${event.recurrence[0]}`;
+  if (eventRRule != record.rrule) {
+    update.rrule = eventRRule;
   }
-
   if (event.summary !== record.title) {
     update.title = event.summary;
   }
-
   if (event.description !== record.description) {
     update.description = event.description;
   }
-
   return update;
 }
 
@@ -127,16 +125,14 @@ async function handleExceptions(events) {
   });
 
   // create a new MeetingException if it wasn't found in the database
-  const meetingExceptionsToCreate = new Set(eventIds);
+  const toCreate = new Set(eventIds);
   for (const meetingException of meetingExceptions) {
-    if (meetingExceptionsToCreate.has(meetingException.gcal_event_id)) {
-      meetingExceptionsToCreate.delete(meetingException.gcal_event_id);
+    if (toCreate.has(meetingException.gcal_event_id)) {
+      toCreate.delete(meetingException.gcal_event_id);
     }
   }
 
-  meetingExceptionsToCreate.forEach((eventId) =>
-    handleCreateException(events, eventId)
-  );
+  toCreate.forEach((eventId) => handleCreateMeetingException(events, eventId));
 
   for (const record of meetingExceptions) {
     const event = events[record.gcal_event_id];
@@ -170,10 +166,10 @@ async function handleCreateMeeting(events, eventId) {
     },
     include: {
       participants: {
-        where: { original_start_time: new Date(0) },
+        where: { instance: new Date(0) },
         select: {
           user_id: true,
-          original_start_time: true,
+          instance: true,
           added_by_id: true,
           is_active: true,
         },
@@ -190,11 +186,7 @@ async function handleCreateMeeting(events, eventId) {
       gcal_event_id: event.id,
       project_id: oldMeeting.project_id,
       slack_channel_id: oldMeeting.slack_channel_id,
-      rrule: event.recurrence?.[0]
-        ? `DTSTART;TZID=America/Los_Angeles:${dayjs(event.start.dateTime)
-            .tz("America/Los_Angeles")
-            .format("YYYYMMDDTHHmmss")}\n${event.recurrence[0]}`
-        : null,
+      rrule: generateRRuleFromEvent(event),
       start_time: new Date(event.start.dateTime),
       title: event.summary,
       type: "SYNCHRONOUS",
@@ -214,7 +206,7 @@ async function handleCreateMeeting(events, eventId) {
   // TODO: handle the Agenda checkin job
 }
 
-async function handleCreateException(exceptions, eventId) {
+async function handleCreateMeetingException(exceptions, eventId) {
   const event = exceptions[eventId];
   const meeting_id = Number(event.extendedProperties?.private?.vrms_meeting_id);
   if (!meeting_id) return;
@@ -227,7 +219,7 @@ async function handleCreateException(exceptions, eventId) {
 
   const row = {
     recurring_event_id: recurring_event.id,
-    original_start_time: new Date(event.originalStartTime.dateTime),
+    instance: new Date(event.originalStartTime.dateTime),
     start_time: new Date(event.start.dateTime),
     end_time: new Date(event.end.dateTime),
     gcal_event_id: event.id,
@@ -237,9 +229,9 @@ async function handleCreateException(exceptions, eventId) {
 
   const meetingException = await prisma.meetingException.upsert({
     where: {
-      recurring_event_id_original_start_time: {
+      recurring_event_id_instance: {
         recurring_event_id: recurring_event.id,
-        original_start_time: new Date(event.originalStartTime.dateTime),
+        instance: new Date(event.originalStartTime.dateTime),
       },
     },
     create: row,
@@ -253,9 +245,8 @@ async function createWatchChannel() {
   const { data } = await calendar.events.watch({
     calendarId: process.env.GOOGLE_CALENDAR_ID,
     requestBody: {
-      id: Date.now(),
+      id: require("crypto").randomBytes(16).toString("hex"),
       type: "web_hook",
-      token: require("crypto").randomBytes(32).toString("hex"),
       address: process.env.NGROK_URL // ngrok can be used in development
         ? `${process.env.NGROK_URL}/api/google/calendar/watch`
         : `${process.env.NEXTAUTH_URL}/api/google/calendar/watch`,
@@ -290,7 +281,10 @@ export async function initSync() {
   if (!doc) {
     const channel = await createWatchChannel();
     channel.expiration = Number(channel.expiration);
-    await mongoClient.db().collection("gcalWatchChannels").insertOne(channel);
+    await mongoClient
+      .db()
+      .collection("gcalWatchChannels")
+      .insertOne({ _id: channel.id, ...channel, createdAt: new Date() });
     console.log("Google Calendar sync channel created");
     // TODO: set up agenda job to refresh channel
   }
