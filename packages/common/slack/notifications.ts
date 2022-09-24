@@ -16,9 +16,9 @@ export const notifyAccountConnected = async (slack_id, gh_username) => {
   });
 };
 
-export const sendMeetingCheckin = async (channel, meeting_id) => {
+export const sendMeetingCheckin = async ({ id, slack_channel_id }) => {
   await app.client.chat.postMessage({
-    channel,
+    channel: slack_channel_id,
     text: `@here it's time to meet!`,
     blocks: [
       {
@@ -34,7 +34,7 @@ export const sendMeetingCheckin = async (channel, meeting_id) => {
             text: "Check In",
           },
           action_id: "meeting_check_in",
-          url: `${process.env.NEXTAUTH_URL}/meetings/${meeting_id}/checkin`,
+          url: `${process.env.NEXTAUTH_URL}/meetings/${id}/checkin`,
         },
       },
     ],

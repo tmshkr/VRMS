@@ -71,6 +71,18 @@ const renderMeetingModal = (team_assignments, slack_id) => ({
     },
     {
       type: "input",
+      label: {
+        type: "plain_text",
+        text: "Description",
+      },
+      element: {
+        type: "plain_text_input",
+        multiline: true,
+        action_id: "meeting_description",
+      },
+    },
+    {
+      type: "input",
       element: {
         type: "static_select",
         placeholder: {
@@ -173,21 +185,21 @@ const renderMeetingModal = (team_assignments, slack_id) => ({
               type: "plain_text",
               text: "30 minutes",
             },
-            value: "30 minutes",
+            value: "30",
           },
           {
             text: {
               type: "plain_text",
               text: "60 minutes",
             },
-            value: "60 minutes",
+            value: "60",
           },
           {
             text: {
               type: "plain_text",
               text: "90 minutes",
             },
-            value: "90 minutes",
+            value: "90",
           },
         ],
         action_id: "meeting_duration",

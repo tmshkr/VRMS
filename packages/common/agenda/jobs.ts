@@ -1,13 +1,19 @@
 import prisma from "common/prisma";
 import { sendMeetingCheckin } from "common/slack/notifications";
-import { getNextOccurrence } from "common/rrule";
+import { getNextOccurrence } from "common/meetings";
 
 export function registerJobs(agenda) {
   agenda.define("sendMeetingCheckin", async (job) => {
     const { meeting_id } = job.attrs.data;
-    const { slack_channel_id, rrule } = await prisma.meeting
+    const meeting = await prisma.meeting
       .findUnique({
         where: { id: meeting_id },
+        include: {
+          exceptions: {
+            where: { status: "CONFIRMED" },
+            orderBy: { start_time: "asc" },
+          },
+        },
       })
       .then((meeting) => {
         if (!meeting) {
@@ -15,10 +21,10 @@ export function registerJobs(agenda) {
         }
         return meeting;
       });
-    await sendMeetingCheckin(slack_channel_id, meeting_id);
+    await sendMeetingCheckin(meeting);
 
-    if (rrule) {
-      const nextRunAt = getNextOccurrence(rrule);
+    if (meeting.rrule) {
+      const nextRunAt = getNextOccurrence(meeting);
       job.schedule(nextRunAt);
       await job.save();
     }

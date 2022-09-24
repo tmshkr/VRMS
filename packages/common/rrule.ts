@@ -1,27 +1,9 @@
-import { rrulestr } from "rrule";
 import dayjs from "./dayjs";
 
 /*
-Returns the given date as if it were UTC, replacing any timezone offset.
+Returns the given date as if it was UTC, replacing any timezone offset.
 Workaround for https://github.com/jakubroztocil/rrule/issues/501
 */
-export function getFakeUTC(date: dayjs.Dayjs): string {
-  return date.format().slice(0, -6) + "Z";
-}
-
-export function getNextOccurrence(
-  rrule: string,
-  start_date = new Date()
-): Date {
-  const rule = rrulestr(rrule);
-  const maxDate = new Date(8640000000000000);
-
-  const [nextOccurrence] = rule.between(
-    start_date,
-    maxDate,
-    false,
-    (date, i) => i === 0
-  );
-
-  return nextOccurrence;
+export function getPseudoUTC(date: dayjs.Dayjs): Date {
+  return new Date(date.format().slice(0, -6) + "Z");
 }

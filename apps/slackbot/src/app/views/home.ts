@@ -23,11 +23,13 @@ export const getHomeTab = async (slack_id: string) => {
         },
         meeting_assignments: {
           where: { meeting: { status: "CONFIRMED" } },
+          orderBy: { meeting: { start_time: "asc" } },
           select: {
             meeting: {
               include: {
                 exceptions: {
                   where: { status: "CONFIRMED" },
+                  orderBy: { start_time: "asc" },
                 },
               },
             },
