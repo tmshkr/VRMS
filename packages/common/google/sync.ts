@@ -74,7 +74,7 @@ async function handleEvents(events) {
       continue;
     }
 
-    const update = createUpdate(event, meeting);
+    const update = createUpdate(event);
 
     if (Object.keys(update).length > 0) {
       await prisma.meeting.update({
@@ -93,28 +93,16 @@ function generateRRuleFromEvent(event) {
     : undefined;
 }
 
-function createUpdate(event, record) {
+function createUpdate(event) {
   const eventRRule = generateRRuleFromEvent(event);
-  const update: any = {};
-  if (event.status.toUpperCase() !== record.status) {
-    update.status = event.status.toUpperCase();
-  }
-  if (!dayjs(event.start.dateTime).isSame(record.start_time)) {
-    update.start_time = event.start.dateTime;
-  }
-  if (!dayjs(event.end.dateTime).isSame(record.end_time)) {
-    update.end_time = event.end.dateTime;
-  }
-  if (eventRRule != record.rrule) {
-    update.rrule = eventRRule;
-  }
-  if (event.summary !== record.title) {
-    update.title = event.summary;
-  }
-  if (event.description !== record.description) {
-    update.description = event.description;
-  }
-  return update;
+  return {
+    status: event.status.toUpperCase(),
+    start_time: event.start.dateTime,
+    end_time: event.end.dateTime,
+    rrule: eventRRule,
+    title: event.summary,
+    description: event.description,
+  };
 }
 
 async function handleExceptions(events) {
@@ -144,7 +132,7 @@ async function handleExceptions(events) {
       continue;
     }
 
-    const update = createUpdate(event, record);
+    const update = createUpdate(event);
 
     if (Object.keys(update).length > 0) {
       await prisma.meetingException.update({
