@@ -34,6 +34,7 @@ export function registerJobs(agenda) {
   agenda.define("renewGCalNotificationChannel", async (job) => {
     const channel = await createNotificationChannel();
     job.schedule(new Date(channel.expiration));
+    await job.save();
   });
 
   console.log("Agenda jobs registered");
