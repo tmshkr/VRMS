@@ -21,14 +21,14 @@ export const createMeeting = async ({ ack, body, view, client, logger }) => {
     meeting_frequency,
   } = getInnerValues(view.state.values);
 
-  const { timezone } = await prisma.user.findUniqueOrThrow({
+  const meetingCreator = await prisma.user.findUniqueOrThrow({
     where: { slack_id: body.user.id },
-    select: { timezone: true },
+    select: { id: true, timezone: true },
   });
 
   const start_time = dayjs.tz(
     `${meeting_datepicker.selected_date} ${meeting_timepicker.selected_time}`,
-    timezone
+    meetingCreator.timezone
   );
 
   let rule;
@@ -38,7 +38,7 @@ export const createMeeting = async ({ ack, body, view, client, logger }) => {
         freq: RRule.WEEKLY,
         interval: 1,
         dtstart: getPseudoUTC(start_time),
-        tzid: timezone,
+        tzid: meetingCreator.timezone,
       });
       break;
     case "2 weeks":
@@ -46,25 +46,13 @@ export const createMeeting = async ({ ack, body, view, client, logger }) => {
         freq: RRule.WEEKLY,
         interval: 2,
         dtstart: getPseudoUTC(start_time),
-        tzid: timezone,
+        tzid: meetingCreator.timezone,
       });
       break;
 
     default:
       break;
   }
-
-  const meetingCreator = await prisma.user
-    .findUnique({
-      where: { slack_id: body.user.id },
-      select: { id: true },
-    })
-    .then((user) => {
-      if (!user) {
-        throw new Error(`Slack user not found: ${body.user.id}`);
-      }
-      return user;
-    });
 
   const participants = await prisma.user.findMany({
     where: {
@@ -80,14 +68,14 @@ export const createMeeting = async ({ ack, body, view, client, logger }) => {
     description: meeting_description,
     start: {
       dateTime: dayjs(start_time),
-      timeZone: timezone,
+      timeZone: meetingCreator.timezone,
     },
     end: {
       dateTime: dayjs(start_time).add(
         Number(meeting_duration.selected_option.value),
         "minutes"
       ),
-      timeZone: timezone,
+      timeZone: meetingCreator.timezone,
     },
     recurrence: [rule?.toString().split("\n")[1]],
   });
