@@ -20,7 +20,8 @@ export function getNextOccurrence(
   );
 
   const exception = meeting.exceptions.find(
-    ({ start_time }) => now < start_time && start_time < nextInstance
+    ({ start_time, instance }) =>
+      now < start_time && instance.valueOf() === nextInstance.valueOf()
   );
 
   return exception ? exception.start_time : nextInstance;
