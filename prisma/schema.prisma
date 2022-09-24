@@ -179,7 +179,7 @@ model MeetingException {
   title         String
   status        MeetingStatus @default(CONFIRMED)
 
-  recurring_event Meeting @relation(fields: [recurring_event_id], references: [id])
+  recurring_event Meeting @relation(fields: [recurring_event_id], references: [id], onDelete: Cascade)
 
   @@id([recurring_event_id, instance])
   @@index(recurring_event_id)
