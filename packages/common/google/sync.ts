@@ -145,7 +145,10 @@ async function handleCreateMeeting(events, eventId) {
     },
   });
 
-  if (!oldMeeting) return;
+  if (!oldMeeting) {
+    console.log("meeting not found", { meeting_id });
+    return;
+  }
 
   const newMeeting = await prisma.meeting.create({
     data: {
@@ -182,7 +185,10 @@ async function handleCreateMeetingException(exceptions, eventId) {
     where: { id: meeting_id },
   });
 
-  if (!recurring_event) return;
+  if (!recurring_event) {
+    console.log("recurring_event not found", { meeting_id });
+    return;
+  }
 
   const row = {
     recurring_event_id: recurring_event.id,
