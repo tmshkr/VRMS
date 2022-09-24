@@ -4,6 +4,7 @@ import { getEvents, getAuth } from "./index";
 import dayjs from "common/dayjs";
 const { google } = require("googleapis");
 import { patchCalendarEvent } from "common/google";
+import { getAgenda } from "common/agenda";
 
 export async function syncMeetings() {
   const mongoClient = await getMongoClient();
@@ -56,16 +57,16 @@ async function handleEvents(events) {
 
   // create a new Meeting if it wasn't found in the database
   const toCreate = new Set(eventIds);
-  for (const meeting of meetings) {
-    if (toCreate.has(meeting.gcal_event_id)) {
-      toCreate.delete(meeting.gcal_event_id);
+  for (const record of meetings) {
+    if (toCreate.has(record.gcal_event_id)) {
+      toCreate.delete(record.gcal_event_id);
     }
   }
 
   toCreate.forEach((eventId) => handleCreateMeeting(events, eventId));
 
-  for (const meeting of meetings) {
-    const event = events[meeting.gcal_event_id];
+  for (const record of meetings) {
+    const event = events[record.gcal_event_id];
     if (event.status === "cancelled") {
       await prisma.meeting.update({
         where: { gcal_event_id: event.id },
@@ -74,14 +75,10 @@ async function handleEvents(events) {
       continue;
     }
 
-    const update = createUpdate(event);
-
-    if (Object.keys(update).length > 0) {
-      await prisma.meeting.update({
-        where: { gcal_event_id: event.id },
-        data: update,
-      });
-    }
+    await prisma.meeting.update({
+      where: { gcal_event_id: event.id },
+      data: createUpdate(event),
+    });
   }
 }
 
@@ -94,12 +91,11 @@ function generateRRuleFromEvent(event) {
 }
 
 function createUpdate(event) {
-  const eventRRule = generateRRuleFromEvent(event);
   return {
     status: event.status.toUpperCase(),
     start_time: event.start.dateTime,
     end_time: event.end.dateTime,
-    rrule: eventRRule,
+    rrule: generateRRuleFromEvent(event),
     title: event.summary,
     description: event.description,
   };
@@ -114,9 +110,9 @@ async function handleExceptions(events) {
 
   // create a new MeetingException if it wasn't found in the database
   const toCreate = new Set(eventIds);
-  for (const meetingException of meetingExceptions) {
-    if (toCreate.has(meetingException.gcal_event_id)) {
-      toCreate.delete(meetingException.gcal_event_id);
+  for (const record of meetingExceptions) {
+    if (toCreate.has(record.gcal_event_id)) {
+      toCreate.delete(record.gcal_event_id);
     }
   }
 
@@ -132,14 +128,10 @@ async function handleExceptions(events) {
       continue;
     }
 
-    const update = createUpdate(event);
-
-    if (Object.keys(update).length > 0) {
-      await prisma.meetingException.update({
-        where: { gcal_event_id: event.id },
-        data: update,
-      });
-    }
+    await prisma.meetingException.update({
+      where: { gcal_event_id: event.id },
+      data: createUpdate(event),
+    });
   }
 }
 
@@ -227,9 +219,9 @@ async function handleCreateMeetingException(exceptions, eventId) {
   // TODO: handle the Agenda checkin job
 }
 
-async function createWatchChannel() {
+export async function createNotificationChannel() {
   const calendar = google.calendar({ version: "v3", auth: getAuth() });
-  const { data } = await calendar.events.watch({
+  const { data: channel } = await calendar.events.watch({
     calendarId: process.env.GOOGLE_CALENDAR_ID,
     requestBody: {
       id: require("crypto").randomUUID(),
@@ -239,10 +231,24 @@ async function createWatchChannel() {
         : `${process.env.NEXTAUTH_URL}/api/google/calendar/watch`,
     },
   });
-  return data;
+  channel.expiration = Number(channel.expiration);
+
+  const mongoClient = await getMongoClient();
+  await mongoClient
+    .db()
+    .collection("gcalNotificationChannels")
+    .insertOne({
+      _id: channel.id,
+      calendarId: process.env.GOOGLE_CALENDAR_ID,
+      ...channel,
+      createdAt: new Date(),
+    });
+
+  console.log("Google Calendar notification channel created");
+  return channel;
 }
 
-async function stopWatchChannel(id, resourceId) {
+async function stopNotificationChannel(id, resourceId) {
   const calendar = google.calendar({ version: "v3", auth: getAuth() });
   await calendar.channels.stop({
     requestBody: {
@@ -253,7 +259,7 @@ async function stopWatchChannel(id, resourceId) {
   const mongoClient = await getMongoClient();
   await mongoClient
     .db()
-    .collection("gcalWatchChannels")
+    .collection("gcalNotificationChannels")
     .deleteOne({ id, resourceId });
   console.log("channel stopped", { id, resourceId });
 }
@@ -262,18 +268,16 @@ export async function initSync() {
   const mongoClient = await getMongoClient();
   const doc = await mongoClient
     .db()
-    .collection("gcalWatchChannels")
+    .collection("gcalNotificationChannels")
     .findOne({ expiration: { $gt: Date.now() } });
 
   if (!doc) {
-    const channel = await createWatchChannel();
-    channel.expiration = Number(channel.expiration);
-    await mongoClient
-      .db()
-      .collection("gcalWatchChannels")
-      .insertOne({ _id: channel.id, ...channel, createdAt: new Date() });
-    console.log("Google Calendar sync channel created");
-    // TODO: set up agenda job to refresh channel
+    const channel = await createNotificationChannel();
+    const agenda = await getAgenda();
+    agenda.schedule(
+      new Date(channel.expiration),
+      "renewGCalNotificationChannel"
+    );
   }
 
   syncMeetings();

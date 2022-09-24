@@ -1,4 +1,5 @@
 import prisma from "common/prisma";
+import { createNotificationChannel } from "common/google/sync";
 import { sendMeetingCheckin } from "common/slack/notifications";
 import { getNextOccurrence } from "common/meetings";
 
@@ -29,5 +30,11 @@ export function registerJobs(agenda) {
       await job.save();
     }
   });
+
+  agenda.define("renewGCalNotificationChannel", async (job) => {
+    const channel = await createNotificationChannel();
+    job.schedule(new Date(channel.expiration));
+  });
+
   console.log("Agenda jobs registered");
 }
