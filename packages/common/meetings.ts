@@ -2,27 +2,34 @@ import { rrulestr } from "rrule";
 import { Meeting, MeetingException } from "@prisma/client";
 
 export function getNextOccurrence(
-  meeting: Meeting & { exceptions: MeetingException[] }
-): Date | null {
-  const now = new Date();
+  meeting: Meeting & { exceptions: MeetingException[] },
+  start = new Date()
+): Date | undefined {
   if (!meeting.rrule) {
-    return now < meeting.start_time ? meeting.start_time : null;
+    return start < meeting.start_time ? meeting.start_time : undefined;
   }
 
   const rule = rrulestr(meeting.rrule);
   const maxDate = new Date(8640000000000000);
 
   const [nextInstance] = rule.between(
-    now,
+    start,
     maxDate,
     false,
     (date, i) => i === 0
   );
 
   const exception = meeting.exceptions.find(
-    ({ start_time, instance }) =>
-      now < start_time && instance.valueOf() === nextInstance.valueOf()
+    ({ instance }) => instance.valueOf() === nextInstance.valueOf()
   );
 
-  return exception ? exception.start_time : nextInstance;
+  if (!exception) {
+    return nextInstance;
+  }
+
+  if (start < exception.start_time) {
+    return exception.start_time;
+  }
+
+  return nextInstance ? getNextOccurrence(meeting, nextInstance) : undefined;
 }
