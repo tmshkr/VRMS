@@ -1,6 +1,6 @@
 import prisma from "common/prisma";
 import dayjs from "common/dayjs";
-import { generateEventInstanceId } from "common/google";
+import { generateEventLink } from "common/google";
 import { getNextOccurrence } from "common/meetings";
 import axios from "axios";
 const jwt = require("jsonwebtoken");
@@ -172,13 +172,6 @@ function renderProject(project) {
 
 function renderMeeting(meeting, userTimezone) {
   const nextMeeting = getNextOccurrence(meeting);
-
-  const url = new URL("https://www.google.com/calendar/event");
-  url.searchParams.set(
-    "eid",
-    generateEventInstanceId(meeting.gcal_event_id, nextMeeting)
-  );
-
   return nextMeeting
     ? {
         block_id: JSON.stringify({ meeting_id: meeting.id, date: nextMeeting }),
@@ -187,7 +180,10 @@ function renderMeeting(meeting, userTimezone) {
           type: "mrkdwn",
           text: `:small_blue_diamond: *${meeting.title}* – ${dayjs(nextMeeting)
             .tz(userTimezone)
-            .format("dddd, MMMM D, h:mm a")} – <${url}|Add to Calendar>`,
+            .format("dddd, MMMM D, h:mm a")} – <${generateEventLink(
+            meeting.gcal_event_id,
+            nextMeeting
+          )}|Add to Calendar>`,
         },
       }
     : null;

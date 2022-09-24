@@ -65,13 +65,13 @@ export const createMeeting = async ({ ack, body, view, client, logger }) => {
 
   const gcalEvent = await createCalendarEvent({
     summary: meeting_title.value,
-    description: meeting_description,
+    description: meeting_description.value,
     start: {
-      dateTime: dayjs(start_time),
+      dateTime: start_time,
       timeZone: meetingCreator.timezone,
     },
     end: {
-      dateTime: dayjs(start_time).add(
+      dateTime: start_time.add(
         Number(meeting_duration.selected_option.value),
         "minutes"
       ),
@@ -83,7 +83,7 @@ export const createMeeting = async ({ ack, body, view, client, logger }) => {
   const newMeeting = await prisma.meeting.create({
     data: {
       created_by_id: meetingCreator.id,
-      end_time: dayjs(start_time)
+      end_time: start_time
         .add(Number(meeting_duration.selected_option.value), "minutes")
         .toDate(),
       gcal_event_id: gcalEvent.id,
