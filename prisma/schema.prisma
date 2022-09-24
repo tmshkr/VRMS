@@ -138,11 +138,6 @@ model TeamMember {
   @@index(project_id)
 }
 
-enum MeetingType {
-  ASYNC
-  SYNCHRONOUS
-}
-
 enum MeetingStatus {
   CONFIRMED
   TENTATIVE
@@ -162,7 +157,6 @@ model Meeting {
   created_by_id    Int
   slack_channel_id String
   status           MeetingStatus @default(CONFIRMED)
-  type             MeetingType
 
   created_at DateTime @default(now())
   updated_at DateTime @default(now()) @updatedAt
