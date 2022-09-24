@@ -67,18 +67,12 @@ async function handleEvents(events) {
 
   for (const record of meetings) {
     const event = events[record.gcal_event_id];
-    if (event.status === "cancelled") {
-      await prisma.meeting.update({
-        where: { gcal_event_id: event.id },
-        data: { status: "CANCELLED" },
-      });
-      continue;
-    }
-
     await prisma.meeting.update({
       where: { gcal_event_id: event.id },
       data: createUpdate(event),
     });
+
+    // update agenda checkin job
   }
 }
 
@@ -93,8 +87,8 @@ function generateRRuleFromEvent(event) {
 function createUpdate(event) {
   return {
     status: event.status.toUpperCase(),
-    start_time: event.start.dateTime,
-    end_time: event.end.dateTime,
+    start_time: event.start?.dateTime,
+    end_time: event.end?.dateTime,
     rrule: generateRRuleFromEvent(event),
     title: event.summary,
     description: event.description,
@@ -120,18 +114,12 @@ async function handleExceptions(events) {
 
   for (const record of meetingExceptions) {
     const event = events[record.gcal_event_id];
-    if (event.status === "cancelled") {
-      await prisma.meetingException.update({
-        where: { gcal_event_id: event.id },
-        data: { status: "CANCELLED" },
-      });
-      continue;
-    }
-
     await prisma.meetingException.update({
       where: { gcal_event_id: event.id },
       data: createUpdate(event),
     });
+
+    // update agenda checkin job
   }
 }
 
