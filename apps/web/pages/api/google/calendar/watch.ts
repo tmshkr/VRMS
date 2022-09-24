@@ -10,7 +10,7 @@ export default async function handler(
   const mongoClient = await getMongoClient();
   const doc = await mongoClient
     .db()
-    .collection("gcalWatchChannels")
+    .collection("gcalNotificationChannels")
     .findOne({ _id: id });
   // check that the id matches
   if (!doc) {
