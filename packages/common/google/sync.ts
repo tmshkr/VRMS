@@ -189,7 +189,6 @@ async function handleCreateMeeting(events, eventId) {
       rrule: generateRRuleFromEvent(event),
       start_time: new Date(event.start.dateTime),
       title: event.summary,
-      type: "SYNCHRONOUS",
       description: event.description,
       participants: { create: oldMeeting.participants },
     },
@@ -245,7 +244,7 @@ async function createWatchChannel() {
   const { data } = await calendar.events.watch({
     calendarId: process.env.GOOGLE_CALENDAR_ID,
     requestBody: {
-      id: require("crypto").randomBytes(16).toString("hex"),
+      id: require("crypto").randomUUID(),
       type: "web_hook",
       address: process.env.NGROK_URL // ngrok can be used in development
         ? `${process.env.NGROK_URL}/api/google/calendar/watch`
