@@ -18,6 +18,7 @@ const app = new App({
     return res.members
       .filter((user) => user.is_bot === false && user.name !== "slackbot")
       .map((user) => {
+        // console.log(user);
         return {
           slack_id: user.id,
           slack_team_id: user.team_id,
@@ -26,6 +27,7 @@ const app = new App({
           real_name: user.real_name,
           email: user.profile.email,
           profile_image: user.profile.image_512,
+          timezone: user.tz,
         };
       });
   });

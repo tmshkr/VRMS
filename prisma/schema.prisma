@@ -66,6 +66,7 @@ model User {
   profile_image        String
   slack_id             String           @unique
   slack_team_id        String
+  timezone             String
   username             String?          @unique
 
   created_at DateTime @default(now())

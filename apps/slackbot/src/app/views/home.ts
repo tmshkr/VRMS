@@ -6,16 +6,12 @@ import axios from "axios";
 const jwt = require("jsonwebtoken");
 
 export const getHomeTab = async (slack_id: string) => {
-  const [quote] = await axios
-    .get("https://zenquotes.io/api/today")
-    .then((res) => res.data)
-    .catch(console.error);
-
   const {
     id: vrms_user_id,
     accounts,
     team_assignments,
     meeting_assignments,
+    timezone,
   } = await prisma.user
     .findUnique({
       where: { slack_id },
@@ -29,7 +25,11 @@ export const getHomeTab = async (slack_id: string) => {
           where: { meeting: { status: "CONFIRMED" } },
           select: {
             meeting: {
-              include: { exceptions: { where: { status: "CONFIRMED" } } },
+              include: {
+                exceptions: {
+                  where: { status: "CONFIRMED" },
+                },
+              },
             },
           },
         },
@@ -106,7 +106,7 @@ export const getHomeTab = async (slack_id: string) => {
             action_id: "create_new_project",
           },
         },
-        ...team_assignments?.map(({ project }) => renderProject(project)),
+        ...team_assignments.map(({ project }) => renderProject(project)),
         {
           type: "divider",
         },
@@ -136,7 +136,7 @@ export const getHomeTab = async (slack_id: string) => {
           },
         },
         ...meeting_assignments
-          .map(({ meeting }) => renderMeeting(meeting))
+          .map(({ meeting }) => renderMeeting(meeting, timezone))
           .filter((block) => !!block)
           .sort((a: any, b: any) => {
             const { date: aDate } = JSON.parse(a.block_id);
@@ -150,7 +150,7 @@ export const getHomeTab = async (slack_id: string) => {
           type: "section",
           text: {
             type: "mrkdwn",
-            text: `_${quote.q}_\n${quote.a}`,
+            text: await getQOTD(),
           },
         },
       ],
@@ -168,7 +168,7 @@ function renderProject(project) {
   };
 }
 
-function renderMeeting(meeting) {
+function renderMeeting(meeting, userTimezone) {
   const nextMeeting = getNextOccurrence(meeting);
 
   const url = new URL("https://www.google.com/calendar/event");
@@ -183,10 +183,28 @@ function renderMeeting(meeting) {
         type: "section",
         text: {
           type: "mrkdwn",
-          text: `:small_blue_diamond: *${meeting.title}* – ${dayjs
-            .tz(nextMeeting)
+          text: `:small_blue_diamond: *${meeting.title}* – ${dayjs(nextMeeting)
+            .tz(userTimezone)
             .format("dddd, MMMM D, h:mm a")} – <${url}|Add to Calendar>`,
         },
       }
     : null;
+}
+
+let qotd;
+async function getQOTD() {
+  const getDate = () => dayjs().tz("US/Central").format("YYYYMMDD");
+  if (qotd?.updated === getDate()) {
+    return qotd.text;
+  }
+
+  const [quote] = await axios
+    .get("https://zenquotes.io/api/today")
+    .then((res) => res.data);
+
+  qotd = {
+    text: `_${quote.q}_\n${quote.a}`,
+    updated: getDate(),
+  };
+  return qotd.text;
 }
