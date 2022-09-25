@@ -169,20 +169,20 @@ model Meeting {
 }
 
 model MeetingException {
-  recurring_event_id Int
-  instance           DateTime
+  meeting_id Int
+  instance   DateTime
 
-  start_time    DateTime
-  end_time      DateTime
+  start_time    DateTime?
+  end_time      DateTime?
   gcal_event_id String        @unique
-  description   String
-  title         String
-  status        MeetingStatus @default(CONFIRMED)
+  description   String?
+  title         String?
+  status        MeetingStatus
 
-  recurring_event Meeting @relation(fields: [recurring_event_id], references: [id], onDelete: Cascade)
+  recurring_event Meeting @relation(fields: [meeting_id], references: [id], onDelete: Cascade)
 
-  @@id([recurring_event_id, instance])
-  @@index(recurring_event_id)
+  @@id([meeting_id, instance])
+  @@index(meeting_id)
   @@index(instance)
 }
 
