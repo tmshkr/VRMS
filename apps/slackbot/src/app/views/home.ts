@@ -28,7 +28,6 @@ export const getHomeTab = async (slack_id: string) => {
             meeting: {
               include: {
                 exceptions: {
-                  where: { status: "CONFIRMED" },
                   orderBy: { start_time: "asc" },
                 },
               },

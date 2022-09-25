@@ -74,7 +74,6 @@ export async function getServerSideProps(context) {
       meetings: {
         include: {
           exceptions: {
-            where: { status: "CONFIRMED" },
             orderBy: { start_time: "asc" },
           },
         },

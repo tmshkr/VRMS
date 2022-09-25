@@ -64,7 +64,6 @@ export async function getServerSideProps(context) {
     where: { id },
     include: {
       exceptions: {
-        where: { status: "CONFIRMED" },
         orderBy: { start_time: "asc" },
       },
       project: { select: { id: true, name: true } },

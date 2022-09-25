@@ -75,13 +75,10 @@ export async function getServerSideProps(context) {
     where: { id },
     include: {
       exceptions: {
-        where: { status: "CONFIRMED" },
         orderBy: { start_time: "asc" },
       },
     },
   });
-
-  // figure out if this meeting is an exception
 
   if (!meeting) {
     return {

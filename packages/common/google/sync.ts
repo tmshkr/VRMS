@@ -178,32 +178,31 @@ async function handleCreateMeeting(events, eventId) {
 
 async function handleCreateMeetingException(exceptions, eventId) {
   const event = exceptions[eventId];
-  const meeting_id = Number(event.extendedProperties?.private?.vrms_meeting_id);
-  if (!meeting_id) return;
 
-  const recurring_event = await prisma.meeting.findUnique({
-    where: { id: meeting_id },
+  const meeting = await prisma.meeting.findUnique({
+    where: { gcal_event_id: event.recurringEventId },
   });
 
-  if (!recurring_event) {
-    console.log("recurring_event not found", { meeting_id });
+  if (!meeting) {
+    console.log("meeting not found", { gcal_event_id: event.recurringEventId });
     return;
   }
 
   const row = {
-    recurring_event_id: recurring_event.id,
+    meeting_id: meeting.id,
     instance: new Date(event.originalStartTime.dateTime),
-    start_time: new Date(event.start.dateTime),
-    end_time: new Date(event.end.dateTime),
+    start_time: new Date(event.start?.dateTime) || undefined,
+    end_time: new Date(event.end?.dateTime) || undefined,
     gcal_event_id: event.id,
     title: event.summary,
     description: event.description,
+    status: event.status.toUpperCase(),
   };
 
   const meetingException = await prisma.meetingException.upsert({
     where: {
-      recurring_event_id_instance: {
-        recurring_event_id: recurring_event.id,
+      meeting_id_instance: {
+        meeting_id: meeting.id,
         instance: new Date(event.originalStartTime.dateTime),
       },
     },
