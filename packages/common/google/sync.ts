@@ -134,10 +134,10 @@ async function handleCreateMeeting(events, eventId) {
     },
     include: {
       participants: {
-        where: { instance: new Date(0) },
+        where: { meeting_time: new Date(0) },
         select: {
           user_id: true,
-          instance: true,
+          meeting_time: true,
           added_by_id: true,
           is_active: true,
         },

@@ -148,7 +148,7 @@ model Meeting {
   id Int @id @default(autoincrement())
 
   title            String
-  description      String?
+  description      String
   start_time       DateTime
   end_time         DateTime
   gcal_event_id    String        @unique
@@ -175,7 +175,7 @@ model MeetingException {
   start_time    DateTime
   end_time      DateTime
   gcal_event_id String        @unique
-  description   String?
+  description   String
   title         String
   status        MeetingStatus @default(CONFIRMED)
 
@@ -187,9 +187,9 @@ model MeetingException {
 }
 
 model MeetingParticipant {
-  meeting_id Int
-  user_id    Int
-  instance   DateTime // use new Date(0) to represent the default for a given meeting/user combination
+  meeting_id   Int
+  user_id      Int
+  meeting_time DateTime // use new Date(0) to represent the default for a given meeting/user combination
 
   added_by_id Int
   is_active   Boolean @default(true)
@@ -201,16 +201,15 @@ model MeetingParticipant {
   meeting       Meeting @relation(fields: [meeting_id], references: [id], onDelete: Cascade)
   participant   User    @relation(fields: [user_id], references: [id])
 
-  @@id([meeting_id, user_id, instance])
+  @@id([meeting_id, user_id, meeting_time])
   @@index(user_id)
   @@index(meeting_id)
-  @@index([meeting_id, instance])
 }
 
 model MeetingCheckin {
-  meeting_id Int
-  user_id    Int
-  instance   DateTime
+  meeting_id   Int
+  user_id      Int
+  meeting_time DateTime
 
   created_at DateTime @default(now())
   updated_at DateTime @default(now()) @updatedAt
@@ -218,7 +217,7 @@ model MeetingCheckin {
   meeting Meeting @relation(fields: [meeting_id], references: [id], onDelete: Cascade)
   user    User    @relation(fields: [user_id], references: [id])
 
-  @@id([meeting_id, user_id, instance])
+  @@id([meeting_id, user_id, meeting_time])
   @@index(meeting_id)
   @@index(user_id)
 }

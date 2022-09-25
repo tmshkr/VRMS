@@ -97,7 +97,7 @@ export const createMeeting = async ({ ack, body, view, client, logger }) => {
         create: participants.map(({ id }) => ({
           user_id: id,
           added_by_id: meetingCreator.id,
-          instance: new Date(0),
+          meeting_time: new Date(0),
         })),
       },
     },
