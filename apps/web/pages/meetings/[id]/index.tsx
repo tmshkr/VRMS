@@ -3,7 +3,7 @@ import Head from "next/head";
 import prisma from "common/prisma";
 import dayjs from "common/dayjs";
 import Link from "next/link";
-import { getNextOccurrence } from "common/rrule";
+import { getNextOccurrence } from "common/meetings";
 import { generateEventLink } from "common/google";
 
 const Meeting: NextPage = (props: any) => {
@@ -62,13 +62,11 @@ export async function getServerSideProps(context) {
 
   const meeting = await prisma.meeting.findUnique({
     where: { id },
-    select: {
-      id: true,
-      gcal_event_id: true,
-      start_time: true,
-      rrule: true,
-      slack_channel_id: true,
-      title: true,
+    include: {
+      exceptions: {
+        where: { status: "CONFIRMED" },
+        orderBy: { start_time: "asc" },
+      },
       project: { select: { id: true, name: true } },
       participants: {
         select: {
@@ -90,9 +88,7 @@ export async function getServerSideProps(context) {
     };
   }
 
-  const nextMeeting = meeting.rrule
-    ? getNextOccurrence(meeting.rrule)
-    : meeting.start_time;
+  const nextMeeting = getNextOccurrence(meeting);
 
   return {
     props: {
