@@ -3,7 +3,7 @@ import Head from "next/head";
 import Link from "next/link";
 import prisma from "common/prisma";
 import dayjs from "common/dayjs";
-import { getNextOccurrence } from "common/rrule";
+import { getNextOccurrence } from "common/meetings";
 import { generateEventLink } from "common/google";
 
 const Projects: NextPage = (props: any) => {
@@ -72,13 +72,11 @@ export async function getServerSideProps(context) {
       id: true,
       name: true,
       meetings: {
-        select: {
-          id: true,
-          gcal_event_id: true,
-          start_time: true,
-          rrule: true,
-          slack_channel_id: true,
-          title: true,
+        include: {
+          exceptions: {
+            where: { status: "CONFIRMED" },
+            orderBy: { start_time: "asc" },
+          },
         },
       },
       team_members: {
@@ -98,9 +96,7 @@ export async function getServerSideProps(context) {
   }
 
   for (const meeting of project.meetings) {
-    const nextMeeting = meeting.rrule
-      ? getNextOccurrence(meeting.rrule)
-      : meeting.start_time;
+    const nextMeeting = getNextOccurrence(meeting);
 
     (meeting as any).nextMeeting = nextMeeting;
     (meeting as any).gcalEventLink = generateEventLink(
