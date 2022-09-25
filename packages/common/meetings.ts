@@ -1,6 +1,10 @@
 import { rrulestr } from "rrule";
 import { Meeting, MeetingException } from "@prisma/client";
-
+/*
+  Returns the next occurrence of a meeting, or undefined if there are no more occurrences.
+  MeetingException[] where: { status: "CONFIRMED" },
+                     orderBy: { start_time: "asc" }
+*/
 export function getNextOccurrence(
   meeting: Meeting & { exceptions: MeetingException[] },
   start = new Date()
