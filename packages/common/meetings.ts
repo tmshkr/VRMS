@@ -18,8 +18,8 @@ export function getNextOccurrence(
   const maxDate = new Date(8640000000000000);
 
   // Find the earliest upcoming exception that is CONFIRMED,
-  // so that we can compare it to the nextInstance or its exception
-  let earliestConfirmedException: any = { start_time: maxDate };
+  // so that we can compare it to the nextInstance
+  let earliestConfirmedException = maxDate;
   const exceptionsByInstance = meeting.exceptions.reduce((acc, cur) => {
     acc[cur.instance.toISOString()] = cur;
 
@@ -27,9 +27,9 @@ export function getNextOccurrence(
       cur.status === "CONFIRMED" &&
       cur.start_time &&
       start < cur.start_time &&
-      cur.start_time < earliestConfirmedException.start_time
+      cur.start_time < earliestConfirmedException
     ) {
-      earliestConfirmedException = cur;
+      earliestConfirmedException = cur.start_time;
     }
 
     return acc;
@@ -52,22 +52,12 @@ export function getNextOccurrence(
     return true;
   });
 
-  const nextInstance = instances?.pop();
+  const nextInstance = instances.pop();
 
-  if (nextInstance) {
-    const exception = exceptionsByInstance[nextInstance.toISOString()];
-    if (exception) {
-      return exception.start_time < earliestConfirmedException.start_time
-        ? exception.start_time
-        : earliestConfirmedException.start_time;
-    } else
-      return nextInstance < earliestConfirmedException.start_time
-        ? nextInstance
-        : earliestConfirmedException.start_time;
-  }
-
-  return earliestConfirmedException.start_time < maxDate
-    ? earliestConfirmedException.start_time
+  return nextInstance && nextInstance < earliestConfirmedException
+    ? nextInstance
+    : earliestConfirmedException < maxDate
+    ? earliestConfirmedException
     : undefined;
 }
 
