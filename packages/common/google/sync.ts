@@ -217,17 +217,20 @@ async function handleCreateMeetingException(exceptions, eventId) {
 
 export async function createNotificationChannel() {
   const calendar = google.calendar({ version: "v3", auth: getAuth() });
+  const webhookURL = process.env.NGROK_URL // ngrok can be used in development
+    ? `${process.env.NGROK_URL}/api/google/calendar/watch`
+    : `${process.env.NEXTAUTH_URL}/api/google/calendar/watch`;
+
   const { data: channel } = await calendar.events.watch({
     calendarId: process.env.GOOGLE_CALENDAR_ID,
     requestBody: {
       id: require("crypto").randomUUID(),
       type: "web_hook",
-      address: process.env.NGROK_URL // ngrok can be used in development
-        ? `${process.env.NGROK_URL}/api/google/calendar/watch`
-        : `${process.env.NEXTAUTH_URL}/api/google/calendar/watch`,
+      address: webhookURL,
     },
   });
   channel.expiration = Number(channel.expiration);
+  channel.address = webhookURL;
 
   const mongoClient = await getMongoClient();
   await mongoClient
