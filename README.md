@@ -96,7 +96,7 @@ Provide the `GITHUB_ID` and `GITHUB_SECRET` variables in your `.env`.
 
 ### Google Calendar integration
 
-The app automatically creates a Google Calendar event for new meetings using the [Calendar API](https://developers.google.com/calendar/api). If you're new to the Calendar API, you might want to start with the [Node.js quickstart](https://developers.google.com/calendar/api/quickstart/nodejs).
+The app supports two-way syncing using the [Calendar API](https://developers.google.com/calendar/api). If you're new to the Calendar API, you might want to start with the [Node.js quickstart](https://developers.google.com/calendar/api/quickstart/nodejs).
 
 To get the necessary environment variables for the app, follow the steps below:
 
