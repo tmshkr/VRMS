@@ -5,6 +5,7 @@ import dayjs from "common/dayjs";
 const { google } = require("googleapis");
 import { patchCalendarEvent } from "common/google";
 import { getAgenda } from "common/agenda";
+import { scheduleNextCheckin } from "common/meetings";
 
 export async function syncMeetings() {
   const mongoClient = await getMongoClient();
@@ -73,6 +74,7 @@ async function handleEvents(events) {
     });
 
     // update agenda checkin job
+    scheduleNextCheckin(record.id);
   }
 }
 
@@ -120,6 +122,7 @@ async function handleExceptions(events) {
     });
 
     // update agenda checkin job
+    scheduleNextCheckin(record.meeting_id);
   }
 }
 
@@ -174,6 +177,7 @@ async function handleCreateMeeting(events, eventId) {
     },
   });
   // TODO: handle the Agenda checkin job
+  scheduleNextCheckin(newMeeting.id);
 }
 
 async function handleCreateMeetingException(exceptions, eventId) {
@@ -190,9 +194,9 @@ async function handleCreateMeetingException(exceptions, eventId) {
 
   const row = {
     meeting_id: meeting.id,
-    instance: new Date(event.originalStartTime.dateTime),
-    start_time: new Date(event.start?.dateTime) || undefined,
-    end_time: new Date(event.end?.dateTime) || undefined,
+    instance: event.originalStartTime.dateTime,
+    start_time: event.start?.dateTime,
+    end_time: event.end?.dateTime,
     gcal_event_id: event.id,
     title: event.summary,
     description: event.description,
@@ -210,6 +214,7 @@ async function handleCreateMeetingException(exceptions, eventId) {
     update: row,
   });
   // TODO: handle the Agenda checkin job
+  scheduleNextCheckin(meeting.id);
 }
 
 export async function createNotificationChannel() {
