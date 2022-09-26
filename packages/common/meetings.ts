@@ -17,6 +17,8 @@ export function getNextOccurrence(
   const rule = rrulestr(meeting.rrule);
   const maxDate = new Date(8640000000000000);
 
+  // Find the earliest upcoming exception that is CONFIRMED,
+  // so that we can compare it to the nextInstance or its exception
   let earliestConfirmedException: any = { start_time: maxDate };
   const exceptionsByInstance = meeting.exceptions.reduce((acc, cur) => {
     acc[cur.instance.toISOString()] = cur;
@@ -45,7 +47,6 @@ export function getNextOccurrence(
       exceptionsByInstance[key].status === "CONFIRMED"
     ) {
       found = true;
-      return true;
     }
 
     return true;
@@ -59,7 +60,10 @@ export function getNextOccurrence(
       return exception.start_time < earliestConfirmedException.start_time
         ? exception.start_time
         : earliestConfirmedException.start_time;
-    } else return nextInstance;
+    } else
+      return nextInstance < earliestConfirmedException.start_time
+        ? nextInstance
+        : earliestConfirmedException.start_time;
   }
 
   return earliestConfirmedException.start_time < maxDate
@@ -77,11 +81,7 @@ export async function scheduleNextCheckin(
   } else {
     const meeting = await prisma.meeting.findUniqueOrThrow({
       where: { id: meeting_id },
-      include: {
-        exceptions: {
-          orderBy: { start_time: "asc" },
-        },
-      },
+      include: { exceptions: true },
     });
     nextRunAt = getNextOccurrence(meeting);
   }
