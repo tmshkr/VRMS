@@ -10,27 +10,25 @@ export function registerJobs(agenda) {
       where: { id: meeting_id },
       include: {
         exceptions: {
-          where: { status: "CONFIRMED" },
           orderBy: { start_time: "asc" },
         },
       },
     });
 
-    await sendMeetingCheckin(meeting);
-
-    if (meeting.rrule) {
-      const nextRunAt = getNextOccurrence(meeting);
-      if (nextRunAt) {
-        job.schedule(nextRunAt);
-        await job.save();
-      }
+    sendMeetingCheckin(meeting);
+    const nextRunAt = getNextOccurrence(meeting);
+    if (nextRunAt) {
+      job.schedule(nextRunAt);
+      job.save();
+    } else {
+      job.remove();
     }
   });
 
   agenda.define("renewGCalNotificationChannel", async (job) => {
     const channel = await createNotificationChannel();
     job.schedule(new Date(channel.expiration));
-    await job.save();
+    job.save();
   });
 
   console.log("Agenda jobs registered");

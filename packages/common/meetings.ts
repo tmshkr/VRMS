@@ -5,7 +5,6 @@ import prisma from "common/prisma";
 
 /*
   Returns the next occurrence of a meeting, or undefined if there are no more occurrences.
-  MeetingException[] orderBy: { start_time: "asc" }
 */
 export function getNextOccurrence(
   meeting: Meeting & { exceptions: MeetingException[] },
@@ -17,8 +16,20 @@ export function getNextOccurrence(
 
   const rule = rrulestr(meeting.rrule);
   const maxDate = new Date(8640000000000000);
+
+  let earliestConfirmedException: any = { start_time: maxDate };
   const exceptionsByInstance = meeting.exceptions.reduce((acc, cur) => {
     acc[cur.instance.toISOString()] = cur;
+
+    if (
+      cur.status === "CONFIRMED" &&
+      cur.start_time &&
+      start < cur.start_time &&
+      cur.start_time < earliestConfirmedException.start_time
+    ) {
+      earliestConfirmedException = cur;
+    }
+
     return acc;
   }, {});
 
@@ -42,40 +53,44 @@ export function getNextOccurrence(
 
   const nextInstance = instances?.pop();
 
-  // find the first exception that is after `start` and before `nextInstance`,
-  // or else find the exception that overrides `nextInstance` if it is after `nextInstance`
-  const exception = meeting.exceptions.find((e) => {
-    if (!e.start_time) return false;
-    if (e.status !== "CONFIRMED") return false;
+  if (nextInstance) {
+    const exception = exceptionsByInstance[nextInstance.toISOString()];
+    if (exception) {
+      return exception.start_time < earliestConfirmedException.start_time
+        ? exception.start_time
+        : earliestConfirmedException.start_time;
+    } else return nextInstance;
+  }
 
-    return (
-      start < e.start_time &&
-      (!nextInstance ||
-        e.start_time < nextInstance ||
-        e.instance.valueOf() === nextInstance.valueOf())
-    );
-  });
-
-  return exception?.start_time ? exception.start_time : nextInstance;
+  return earliestConfirmedException.start_time < maxDate
+    ? earliestConfirmedException.start_time
+    : undefined;
 }
 
-export async function scheduleNextCheckin(meeting_id: number, sendAt?: Date) {
-  const meeting = await prisma.meeting.findUniqueOrThrow({
-    where: { id: meeting_id },
-    include: {
-      exceptions: {
-        orderBy: { start_time: "asc" },
+export async function scheduleNextCheckin(
+  meeting_id: number,
+  sendAt?: Date // provide the Date if known
+) {
+  let nextRunAt;
+  if (sendAt) {
+    nextRunAt = sendAt;
+  } else {
+    const meeting = await prisma.meeting.findUniqueOrThrow({
+      where: { id: meeting_id },
+      include: {
+        exceptions: {
+          orderBy: { start_time: "asc" },
+        },
       },
-    },
-  });
-
-  const nextRunAt = getNextOccurrence(meeting);
+    });
+    nextRunAt = getNextOccurrence(meeting);
+  }
 
   const agenda = await getAgenda();
   const [job] = await agenda.jobs(
     {
       name: "sendMeetingCheckin",
-      data: { meeting_id: meeting.id },
+      data: { meeting_id },
     },
     undefined,
     1

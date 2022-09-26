@@ -73,7 +73,6 @@ async function handleEvents(events) {
       data: createUpdate(event),
     });
 
-    // update agenda checkin job
     scheduleNextCheckin(record.id);
   }
 }
@@ -121,7 +120,6 @@ async function handleExceptions(events) {
       data: createUpdate(event),
     });
 
-    // update agenda checkin job
     scheduleNextCheckin(record.meeting_id);
   }
 }
@@ -176,8 +174,8 @@ async function handleCreateMeeting(events, eventId) {
       },
     },
   });
-  // TODO: handle the Agenda checkin job
-  scheduleNextCheckin(newMeeting.id);
+
+  scheduleNextCheckin(newMeeting.id, newMeeting.start_time);
 }
 
 async function handleCreateMeetingException(exceptions, eventId) {
@@ -203,7 +201,7 @@ async function handleCreateMeetingException(exceptions, eventId) {
     status: event.status.toUpperCase(),
   };
 
-  const meetingException = await prisma.meetingException.upsert({
+  await prisma.meetingException.upsert({
     where: {
       meeting_id_instance: {
         meeting_id: meeting.id,
@@ -213,7 +211,7 @@ async function handleCreateMeetingException(exceptions, eventId) {
     create: row,
     update: row,
   });
-  // TODO: handle the Agenda checkin job
+
   scheduleNextCheckin(meeting.id);
 }
 
