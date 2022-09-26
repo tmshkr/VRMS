@@ -1,5 +1,5 @@
 import { app } from "app";
-import { getMongoClient } from "lib/mongo";
+import { getMongoClient } from "common/mongo";
 
 import { createMeetingModal } from "app/views/modals/createMeetingModal";
 import { createProjectModal } from "app/views/modals/createProjectModal";

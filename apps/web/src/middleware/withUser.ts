@@ -1,4 +1,4 @@
-import prisma from "lib/prisma";
+import prisma from "common/prisma";
 import { getToken } from "next-auth/jwt";
 
 export const withUser = async (req, res, next) => {

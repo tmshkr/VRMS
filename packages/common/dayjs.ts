@@ -8,11 +8,12 @@ import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
-dayjs.tz.setDefault("America/Los_Angeles");
 dayjs.extend(weekday);
 dayjs.extend(isoWeek);
 dayjs.extend(isSameOrBefore);
 dayjs.extend(isSameOrAfter);
+
+dayjs.tz.guess();
 
 export function findOccurrenceOfWeekday(date: dayjs.Dayjs) {
   let n = 0;

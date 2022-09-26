@@ -1,4 +1,4 @@
-import prisma from "lib/prisma";
+import prisma from "common/prisma";
 
 export const createMeetingModal = async ({ body, client, ack, logger }) => {
   await ack();
@@ -67,6 +67,18 @@ const renderMeetingModal = (team_assignments, slack_id) => ({
       element: {
         type: "plain_text_input",
         action_id: "meeting_title",
+      },
+    },
+    {
+      type: "input",
+      label: {
+        type: "plain_text",
+        text: "Description",
+      },
+      element: {
+        type: "plain_text_input",
+        multiline: true,
+        action_id: "meeting_description",
       },
     },
     {
@@ -173,21 +185,21 @@ const renderMeetingModal = (team_assignments, slack_id) => ({
               type: "plain_text",
               text: "30 minutes",
             },
-            value: "30 minutes",
+            value: "30",
           },
           {
             text: {
               type: "plain_text",
               text: "60 minutes",
             },
-            value: "60 minutes",
+            value: "60",
           },
           {
             text: {
               type: "plain_text",
               text: "90 minutes",
             },
-            value: "90 minutes",
+            value: "90",
           },
         ],
         action_id: "meeting_duration",

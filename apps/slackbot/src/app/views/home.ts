@@ -1,21 +1,17 @@
-import prisma from "lib/prisma";
+import prisma from "common/prisma";
 import dayjs from "common/dayjs";
-import { generateEventInstanceId } from "common/google";
-import { getNextOccurrence } from "common/rrule";
+import { generateEventLink } from "common/google";
+import { getNextOccurrence } from "common/meetings";
 import axios from "axios";
 const jwt = require("jsonwebtoken");
 
 export const getHomeTab = async (slack_id: string) => {
-  const [quote] = await axios
-    .get("https://zenquotes.io/api/today")
-    .then((res) => res.data)
-    .catch(console.error);
-
   const {
     id: vrms_user_id,
     accounts,
     team_assignments,
     meeting_assignments,
+    timezone,
   } = await prisma.user
     .findUnique({
       where: { slack_id },
@@ -26,8 +22,16 @@ export const getHomeTab = async (slack_id: string) => {
           select: { project: true },
         },
         meeting_assignments: {
+          where: { meeting: { status: "CONFIRMED" } },
+          orderBy: { meeting: { start_time: "asc" } },
           select: {
-            meeting: true,
+            meeting: {
+              include: {
+                exceptions: {
+                  orderBy: { start_time: "asc" },
+                },
+              },
+            },
           },
         },
       },
@@ -103,7 +107,7 @@ export const getHomeTab = async (slack_id: string) => {
             action_id: "create_new_project",
           },
         },
-        ...team_assignments?.map(({ project }) => renderProject(project)),
+        ...team_assignments.map(({ project }) => renderProject(project)),
         {
           type: "divider",
         },
@@ -132,7 +136,14 @@ export const getHomeTab = async (slack_id: string) => {
             action_id: "create_new_meeting",
           },
         },
-        ...meeting_assignments?.map(({ meeting }) => renderMeeting(meeting)),
+        ...meeting_assignments
+          .map(({ meeting }) => renderMeeting(meeting, timezone))
+          .filter((block) => !!block)
+          .sort((a: any, b: any) => {
+            const { date: aDate } = JSON.parse(a.block_id);
+            const { date: bDate } = JSON.parse(b.block_id);
+            return dayjs(aDate).isBefore(bDate) ? -1 : 1;
+          }),
         {
           type: "divider",
         },
@@ -140,7 +151,7 @@ export const getHomeTab = async (slack_id: string) => {
           type: "section",
           text: {
             type: "mrkdwn",
-            text: `_${quote.q}_\n${quote.a}`,
+            text: await getQOTD(),
           },
         },
       ],
@@ -158,24 +169,40 @@ function renderProject(project) {
   };
 }
 
-function renderMeeting(meeting) {
-  const nextMeeting = meeting.rrule
-    ? getNextOccurrence(meeting.rrule)
-    : meeting.start_date;
+function renderMeeting(meeting, userTimezone) {
+  const { startTime: nextMeeting, instance } = getNextOccurrence(meeting);
 
-  const url = new URL("https://www.google.com/calendar/event");
-  url.searchParams.set(
-    "eid",
-    generateEventInstanceId(meeting.gcal_event_id, nextMeeting)
-  );
+  return nextMeeting
+    ? {
+        block_id: JSON.stringify({ meeting_id: meeting.id, date: nextMeeting }),
+        type: "section",
+        text: {
+          type: "mrkdwn",
+          text: `:small_blue_diamond: *${meeting.title}* – ${dayjs(nextMeeting)
+            .tz(userTimezone)
+            .format("dddd, MMMM D, h:mm a")} – <${generateEventLink(
+            meeting.gcal_event_id,
+            instance
+          )}|Add to Calendar>`,
+        },
+      }
+    : null;
+}
 
-  return {
-    type: "section",
-    text: {
-      type: "mrkdwn",
-      text: `:small_blue_diamond: *${meeting.title}* – ${dayjs
-        .tz(nextMeeting)
-        .format("dddd, MMMM D, h:mm a")} – <${url}|Add to Calendar>`,
-    },
+let qotd;
+async function getQOTD() {
+  const getDate = () => dayjs().tz("US/Central").format("YYYYMMDD");
+  if (qotd?.updated === getDate()) {
+    return qotd.text;
+  }
+
+  const [quote] = await axios
+    .get("https://zenquotes.io/api/today")
+    .then((res) => res.data);
+
+  qotd = {
+    text: `_${quote.q}_\n${quote.a}`,
+    updated: getDate(),
   };
+  return qotd.text;
 }

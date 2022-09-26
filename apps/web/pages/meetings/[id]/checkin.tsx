@@ -1,7 +1,7 @@
 import { getToken } from "next-auth/jwt";
 import Head from "next/head";
-import prisma from "lib/prisma";
-import { getNextOccurrence } from "common/rrule";
+import prisma from "common/prisma";
+import { getNextOccurrence } from "common/meetings";
 import dayjs from "common/dayjs";
 
 const MeetingCheckinPage = (props: any) => {
@@ -73,11 +73,10 @@ export async function getServerSideProps(context) {
 
   const meeting = await prisma.meeting.findUnique({
     where: { id },
-    select: {
-      id: true,
-      title: true,
-      rrule: true,
-      start_date: true,
+    include: {
+      exceptions: {
+        orderBy: { start_time: "asc" },
+      },
     },
   });
 
@@ -94,13 +93,23 @@ export async function getServerSideProps(context) {
   const checkinWindowStart = dayjs().subtract(15, "minute");
   const checkinWindowEnd = dayjs().add(15, "minute");
 
-  const meeting_date = meeting.rrule
-    ? getNextOccurrence(meeting.rrule, checkinWindowStart.toDate())
-    : meeting.start_date;
+  const { startTime: meeting_time } = getNextOccurrence(
+    meeting,
+    checkinWindowStart.toDate()
+  );
+
+  if (!meeting_time) {
+    return {
+      props: {
+        meeting: { title: meeting.title },
+        message: "It looks like there are no more meetings scheduled",
+      },
+    };
+  }
 
   if (
-    !checkinWindowStart.isSameOrBefore(meeting_date) ||
-    !checkinWindowEnd.isSameOrAfter(meeting_date)
+    !checkinWindowStart.isSameOrBefore(meeting_time) ||
+    !checkinWindowEnd.isSameOrAfter(meeting_time)
   ) {
     return {
       props: {
@@ -116,7 +125,7 @@ export async function getServerSideProps(context) {
       data: {
         meeting_id: meeting.id,
         user_id: user.id,
-        meeting_date,
+        meeting_time,
       },
     });
     message = "Thanks for checking in!";

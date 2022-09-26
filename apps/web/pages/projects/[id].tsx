@@ -1,9 +1,9 @@
 import type { NextPage } from "next";
 import Head from "next/head";
 import Link from "next/link";
-import prisma from "lib/prisma";
+import prisma from "common/prisma";
 import dayjs from "common/dayjs";
-import { getNextOccurrence } from "common/rrule";
+import { getNextOccurrence } from "common/meetings";
 import { generateEventLink } from "common/google";
 
 const Projects: NextPage = (props: any) => {
@@ -30,7 +30,7 @@ const Projects: NextPage = (props: any) => {
       <h3>📅 Upcoming Meetings</h3>
       <ul>
         {project.meetings.map((meeting) => {
-          return (
+          return meeting.nextMeeting ? (
             <li key={meeting.id} suppressHydrationWarning>
               <Link href={`/meetings/${meeting.id}`}>{meeting.title}</Link>
               <br />
@@ -45,6 +45,8 @@ const Projects: NextPage = (props: any) => {
                 Add to Calendar
               </a>
             </li>
+          ) : (
+            "No upcoming meetings"
           );
         })}
       </ul>
@@ -72,13 +74,10 @@ export async function getServerSideProps(context) {
       id: true,
       name: true,
       meetings: {
-        select: {
-          id: true,
-          gcal_event_id: true,
-          start_date: true,
-          rrule: true,
-          slack_channel_id: true,
-          title: true,
+        include: {
+          exceptions: {
+            orderBy: { start_time: "asc" },
+          },
         },
       },
       team_members: {
@@ -98,14 +97,12 @@ export async function getServerSideProps(context) {
   }
 
   for (const meeting of project.meetings) {
-    const nextMeeting = meeting.rrule
-      ? getNextOccurrence(meeting.rrule)
-      : meeting.start_date;
+    const { startTime: nextMeeting, instance } = getNextOccurrence(meeting);
 
     (meeting as any).nextMeeting = nextMeeting;
     (meeting as any).gcalEventLink = generateEventLink(
       meeting.gcal_event_id,
-      nextMeeting
+      instance
     );
   }
 

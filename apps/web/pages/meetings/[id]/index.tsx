@@ -1,9 +1,9 @@
 import type { NextPage } from "next";
 import Head from "next/head";
-import prisma from "lib/prisma";
+import prisma from "common/prisma";
 import dayjs from "common/dayjs";
 import Link from "next/link";
-import { getNextOccurrence } from "common/rrule";
+import { getNextOccurrence } from "common/meetings";
 import { generateEventLink } from "common/google";
 
 const Meeting: NextPage = (props: any) => {
@@ -23,18 +23,20 @@ const Meeting: NextPage = (props: any) => {
         </Link>
       </p>
       <h2>📅 Next Meeting</h2>
-      <p suppressHydrationWarning>
-        {dayjs(nextMeeting).format("MMM D, h:mm a")}
-        <br />
-        <a
-          href={gcalEventLink}
-          target="_blank"
-          rel="noopener noreferrer"
-          suppressHydrationWarning
-        >
-          Add to Calendar
-        </a>
-      </p>
+      {nextMeeting && (
+        <p suppressHydrationWarning>
+          {dayjs(nextMeeting).format("MMM D, h:mm a")}
+          <br />
+          <a
+            href={gcalEventLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            suppressHydrationWarning
+          >
+            Add to Calendar
+          </a>
+        </p>
+      )}
       <h2>👥 Participants</h2>
       {meeting.participants.map(({ participant }) => {
         return (
@@ -62,13 +64,10 @@ export async function getServerSideProps(context) {
 
   const meeting = await prisma.meeting.findUnique({
     where: { id },
-    select: {
-      id: true,
-      gcal_event_id: true,
-      start_date: true,
-      rrule: true,
-      slack_channel_id: true,
-      title: true,
+    include: {
+      exceptions: {
+        orderBy: { start_time: "asc" },
+      },
       project: { select: { id: true, name: true } },
       participants: {
         select: {
@@ -90,15 +89,13 @@ export async function getServerSideProps(context) {
     };
   }
 
-  const nextMeeting = meeting.rrule
-    ? getNextOccurrence(meeting.rrule)
-    : meeting.start_date;
+  const { startTime: nextMeeting, instance } = getNextOccurrence(meeting);
 
   return {
     props: {
       meeting,
       nextMeeting,
-      gcalEventLink: generateEventLink(meeting.gcal_event_id, nextMeeting),
+      gcalEventLink: generateEventLink(meeting.gcal_event_id, instance),
     },
   };
 }

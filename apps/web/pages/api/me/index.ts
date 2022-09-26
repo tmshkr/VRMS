@@ -1,4 +1,4 @@
-import { getMongoClient } from "lib/mongo";
+import { getMongoClient } from "common/mongo";
 import { withUser } from "src/middleware/withUser";
 import { removeEmpty } from "common/utils/object";
 

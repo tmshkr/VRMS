@@ -1,6 +1,6 @@
 import { app } from "app";
 import { getHomeTab } from "./views/home";
-import prisma from "lib/prisma";
+import prisma from "common/prisma";
 
 export const registerEvents = () => {
   app.event("app_home_opened", async ({ event, client, logger }) => {
@@ -25,6 +25,7 @@ export const registerEvents = () => {
         real_name: user.real_name,
         email: user.profile.email,
         profile_image: user.profile.image_512,
+        timezone: user.tz,
       };
       await prisma.user.upsert({
         where: { slack_id: user.id },
@@ -46,6 +47,7 @@ export const registerEvents = () => {
           real_name: user.real_name,
           email: user.profile.email,
           profile_image: user.profile.image_512,
+          timezone: user.tz,
         },
       });
       console.log(`updated user ${user.id}`);

@@ -1,4 +1,4 @@
-import prisma from "lib/prisma";
+import prisma from "common/prisma";
 import { withUser } from "src/middleware/withUser";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { createRouter } from "next-connect";

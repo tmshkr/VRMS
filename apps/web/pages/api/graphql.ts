@@ -1,5 +1,5 @@
 import { createServer } from "@graphql-yoga/node";
-import prisma from "lib/prisma";
+import prisma from "common/prisma";
 
 const typeDefs = `
   scalar DateTime

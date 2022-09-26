@@ -1,17 +1,17 @@
-import prisma from "lib/prisma";
+import prisma from "common/prisma";
 import { RRule } from "rrule";
-import { getFakeUTC } from "common/rrule";
+import { getPseudoUTC } from "common/rrule";
 import dayjs from "common/dayjs";
-import { getAgenda } from "lib/agenda";
+import { getAgenda } from "common/agenda";
 import { getHomeTab } from "app/views/home";
 import { getInnerValues } from "utils/getInnerValues";
-import { createCalendarEvent } from "common/google";
+import { createCalendarEvent, patchCalendarEvent } from "common/google";
 
 export const createMeeting = async ({ ack, body, view, client, logger }) => {
   await ack();
-  const values = getInnerValues(view.state.values);
   const {
     meeting_title,
+    meeting_description,
     meeting_project,
     meeting_participants,
     meeting_channel,
@@ -19,10 +19,16 @@ export const createMeeting = async ({ ack, body, view, client, logger }) => {
     meeting_timepicker,
     meeting_duration,
     meeting_frequency,
-  } = values;
+  } = getInnerValues(view.state.values);
 
-  const start_date = dayjs.tz(
-    `${meeting_datepicker.selected_date} ${meeting_timepicker.selected_time}`
+  const meetingCreator = await prisma.user.findUniqueOrThrow({
+    where: { slack_id: body.user.id },
+    select: { id: true, timezone: true },
+  });
+
+  const start_time = dayjs.tz(
+    `${meeting_datepicker.selected_date} ${meeting_timepicker.selected_time}`,
+    meetingCreator.timezone
   );
 
   let rule;
@@ -31,34 +37,22 @@ export const createMeeting = async ({ ack, body, view, client, logger }) => {
       rule = new RRule({
         freq: RRule.WEEKLY,
         interval: 1,
-        dtstart: new Date(getFakeUTC(start_date)),
-        tzid: "America/Los_Angeles",
+        dtstart: getPseudoUTC(start_time),
+        tzid: meetingCreator.timezone,
       });
       break;
     case "2 weeks":
       rule = new RRule({
         freq: RRule.WEEKLY,
         interval: 2,
-        dtstart: new Date(getFakeUTC(start_date)),
-        tzid: "America/Los_Angeles",
+        dtstart: getPseudoUTC(start_time),
+        tzid: meetingCreator.timezone,
       });
       break;
 
     default:
       break;
   }
-
-  const meetingCreator = await prisma.user
-    .findUnique({
-      where: { slack_id: body.user.id },
-      select: { id: true },
-    })
-    .then((user) => {
-      if (!user) {
-        throw new Error(`Slack user not found: ${body.user.id}`);
-      }
-      return user;
-    });
 
   const participants = await prisma.user.findMany({
     where: {
@@ -71,51 +65,55 @@ export const createMeeting = async ({ ack, body, view, client, logger }) => {
 
   const gcalEvent = await createCalendarEvent({
     summary: meeting_title.value,
-    description: "test meeting description",
+    description: meeting_description.value,
     start: {
-      dateTime: dayjs(start_date).utc(),
-      timeZone: "America/Los_Angeles",
+      dateTime: start_time,
+      timeZone: meetingCreator.timezone,
     },
     end: {
-      dateTime: dayjs(start_date)
-        .utc()
-        .add(
-          Number(meeting_duration.selected_option.value.split(" ")[0]),
-          "minutes"
-        ),
-      timeZone: "America/Los_Angeles",
+      dateTime: start_time.add(
+        Number(meeting_duration.selected_option.value),
+        "minutes"
+      ),
+      timeZone: meetingCreator.timezone,
     },
     recurrence: [rule?.toString().split("\n")[1]],
-    extendedProperties: {
-      private: {
-        vrms_project_id: Number(meeting_project.selected_option.value),
-      },
-    },
   });
 
   const newMeeting = await prisma.meeting.create({
     data: {
       created_by_id: meetingCreator.id,
-      duration: Number(meeting_duration.selected_option.value.split(" ")[0]),
+      end_time: start_time
+        .add(Number(meeting_duration.selected_option.value), "minutes")
+        .toDate(),
       gcal_event_id: gcalEvent.id,
-      gcal_event_link: gcalEvent.htmlLink,
       project_id: Number(meeting_project.selected_option.value),
       rrule: rule?.toString(),
       slack_channel_id: meeting_channel.selected_channel,
-      start_date: start_date.utc().format(),
+      start_time: start_time.toDate(),
       title: meeting_title.value,
-      type: "SYNCHRONOUS",
+      description: meeting_description.value,
       participants: {
         create: participants.map(({ id }) => ({
           user_id: id,
           added_by_id: meetingCreator.id,
+          meeting_time: new Date(0),
         })),
       },
     },
   });
 
+  await patchCalendarEvent(gcalEvent.id, {
+    extendedProperties: {
+      private: {
+        vrms_meeting_id: newMeeting.id,
+        vrms_project_id: newMeeting.project_id,
+      },
+    },
+  });
+
   const agenda = await getAgenda();
-  await agenda.schedule(start_date.utc().format(), "sendMeetingCheckin", {
+  await agenda.schedule(start_time, "sendMeetingCheckin", {
     meeting_id: newMeeting.id,
   });
 

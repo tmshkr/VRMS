@@ -1,5 +1,5 @@
 import type { NextPage } from "next";
-import prisma from "lib/prisma";
+import prisma from "common/prisma";
 import Head from "next/head";
 import Link from "next/link";
 

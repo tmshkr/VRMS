@@ -1,4 +1,4 @@
-import prisma from "lib/prisma";
+import prisma from "common/prisma";
 import { getHomeTab } from "app/views/home";
 import { getInnerValues } from "utils/getInnerValues";
 
