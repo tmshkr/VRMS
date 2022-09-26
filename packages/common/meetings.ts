@@ -16,24 +16,22 @@ export function getNextOccurrence(
 
   const rule = rrulestr(meeting.rrule);
   const maxDate = new Date(8640000000000000);
+  const statusByInstance = {};
 
   // Find the earliest upcoming exception that is CONFIRMED,
   // so that we can compare it to the nextInstance
-  let earliestConfirmedException = maxDate;
-  const exceptionsByInstance = meeting.exceptions.reduce((acc, cur) => {
-    acc[cur.instance.toISOString()] = cur;
-
+  let earliestException = { start_time: maxDate, instance: maxDate };
+  for (const { status, instance, start_time } of meeting.exceptions) {
+    statusByInstance[instance.toISOString()] = status;
     if (
-      cur.status === "CONFIRMED" &&
-      cur.start_time &&
-      start < cur.start_time &&
-      cur.start_time < earliestConfirmedException
+      status === "CONFIRMED" &&
+      start_time &&
+      start < start_time &&
+      start_time < earliestException.start_time
     ) {
-      earliestConfirmedException = cur.start_time;
+      earliestException = { start_time, instance };
     }
-
-    return acc;
-  }, {});
+  }
 
   let found = false;
   const instances = rule.between(start, maxDate, false, (date, i) => {
@@ -42,10 +40,7 @@ export function getNextOccurrence(
 
     // find the next instance that is not cancelled or tentative
     const key = date.toISOString();
-    if (
-      !exceptionsByInstance[key] ||
-      exceptionsByInstance[key].status === "CONFIRMED"
-    ) {
+    if (!statusByInstance[key] || statusByInstance[key] === "CONFIRMED") {
       found = true;
     }
 
@@ -54,10 +49,12 @@ export function getNextOccurrence(
 
   const nextInstance = instances.pop();
 
-  return nextInstance && nextInstance < earliestConfirmedException
+  return nextInstance &&
+    nextInstance.valueOf() !== earliestException.instance.valueOf() &&
+    nextInstance < earliestException.start_time
     ? nextInstance
-    : earliestConfirmedException < maxDate
-    ? earliestConfirmedException
+    : earliestException.start_time < maxDate
+    ? earliestException.start_time
     : undefined;
 }
 
