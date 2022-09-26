@@ -4,14 +4,17 @@ import { getAgenda } from "common/agenda";
 import prisma from "common/prisma";
 
 /*
-  Returns the next occurrence of a meeting, or undefined if there are no more occurrences.
+  Returns the next instance and startTime of a meeting,
+  or undefined if there are no more occurrences.
 */
 export function getNextOccurrence(
   meeting: Meeting & { exceptions: MeetingException[] },
   start = new Date()
-): Date | undefined {
+): { instance: Date | undefined; startTime: Date | undefined } {
   if (!meeting.rrule) {
-    return start < meeting.start_time ? meeting.start_time : undefined;
+    return start < meeting.start_time
+      ? { instance: meeting.start_time, startTime: meeting.start_time }
+      : { instance: undefined, startTime: undefined };
   }
 
   const rule = rrulestr(meeting.rrule);
@@ -52,10 +55,13 @@ export function getNextOccurrence(
   return nextInstance &&
     nextInstance.valueOf() !== earliestException.instance.valueOf() &&
     nextInstance < earliestException.start_time
-    ? nextInstance
+    ? { instance: nextInstance, startTime: nextInstance }
     : earliestException.start_time < maxDate
-    ? earliestException.start_time
-    : undefined;
+    ? {
+        instance: earliestException.instance,
+        startTime: earliestException.start_time,
+      }
+    : { instance: undefined, startTime: undefined };
 }
 
 export async function scheduleNextCheckin(
@@ -70,7 +76,7 @@ export async function scheduleNextCheckin(
       where: { id: meeting_id },
       include: { exceptions: true },
     });
-    nextRunAt = getNextOccurrence(meeting);
+    nextRunAt = getNextOccurrence(meeting).startTime;
   }
 
   const agenda = await getAgenda();

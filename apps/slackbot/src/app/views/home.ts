@@ -170,7 +170,8 @@ function renderProject(project) {
 }
 
 function renderMeeting(meeting, userTimezone) {
-  const nextMeeting = getNextOccurrence(meeting);
+  const { startTime: nextMeeting, instance } = getNextOccurrence(meeting);
+
   return nextMeeting
     ? {
         block_id: JSON.stringify({ meeting_id: meeting.id, date: nextMeeting }),
@@ -181,7 +182,7 @@ function renderMeeting(meeting, userTimezone) {
             .tz(userTimezone)
             .format("dddd, MMMM D, h:mm a")} – <${generateEventLink(
             meeting.gcal_event_id,
-            nextMeeting
+            instance
           )}|Add to Calendar>`,
         },
       }

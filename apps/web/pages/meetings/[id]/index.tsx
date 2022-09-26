@@ -23,18 +23,20 @@ const Meeting: NextPage = (props: any) => {
         </Link>
       </p>
       <h2>📅 Next Meeting</h2>
-      <p suppressHydrationWarning>
-        {dayjs(nextMeeting).format("MMM D, h:mm a")}
-        <br />
-        <a
-          href={gcalEventLink}
-          target="_blank"
-          rel="noopener noreferrer"
-          suppressHydrationWarning
-        >
-          Add to Calendar
-        </a>
-      </p>
+      {nextMeeting && (
+        <p suppressHydrationWarning>
+          {dayjs(nextMeeting).format("MMM D, h:mm a")}
+          <br />
+          <a
+            href={gcalEventLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            suppressHydrationWarning
+          >
+            Add to Calendar
+          </a>
+        </p>
+      )}
       <h2>👥 Participants</h2>
       {meeting.participants.map(({ participant }) => {
         return (
@@ -87,13 +89,13 @@ export async function getServerSideProps(context) {
     };
   }
 
-  const nextMeeting = getNextOccurrence(meeting);
+  const { startTime: nextMeeting, instance } = getNextOccurrence(meeting);
 
   return {
     props: {
       meeting,
       nextMeeting,
-      gcalEventLink: generateEventLink(meeting.gcal_event_id, nextMeeting),
+      gcalEventLink: generateEventLink(meeting.gcal_event_id, instance),
     },
   };
 }

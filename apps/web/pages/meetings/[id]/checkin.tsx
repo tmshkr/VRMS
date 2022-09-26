@@ -93,7 +93,10 @@ export async function getServerSideProps(context) {
   const checkinWindowStart = dayjs().subtract(15, "minute");
   const checkinWindowEnd = dayjs().add(15, "minute");
 
-  const meeting_time = getNextOccurrence(meeting, checkinWindowStart.toDate());
+  const { startTime: meeting_time } = getNextOccurrence(
+    meeting,
+    checkinWindowStart.toDate()
+  );
 
   if (!meeting_time) {
     return {

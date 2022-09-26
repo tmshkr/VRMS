@@ -33,21 +33,22 @@ export async function patchCalendarEvent(eventId, requestBody) {
   return data;
 }
 
-export function generateEventInstanceId(gcalEventId, startDate) {
-  return Buffer.from(
-    `${gcalEventId}_${dayjs(startDate).utc().format("YYYYMMDDTHHmmss[Z]")} ${
-      process.env.GOOGLE_CALENDAR_ID
-    }`
-  )
-    .toString("base64")
-    .replace(/=/g, "");
-}
+export function generateEventLink(
+  gcalEventId: string,
+  eventInstance: Date | undefined
+) {
+  if (!eventInstance) return;
 
-export function generateEventLink(gcalEventId, startDate) {
   const gcalEventLink = new URL("https://www.google.com/calendar/event");
   gcalEventLink.searchParams.set(
     "eid",
-    generateEventInstanceId(gcalEventId, startDate)
+    Buffer.from(
+      `${gcalEventId}_${dayjs(eventInstance)
+        .utc()
+        .format("YYYYMMDDTHHmmss[Z]")} ${process.env.GOOGLE_CALENDAR_ID}`
+    )
+      .toString("base64")
+      .replace(/=/g, "")
   );
 
   return gcalEventLink.toString();

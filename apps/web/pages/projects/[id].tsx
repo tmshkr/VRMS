@@ -30,7 +30,7 @@ const Projects: NextPage = (props: any) => {
       <h3>📅 Upcoming Meetings</h3>
       <ul>
         {project.meetings.map((meeting) => {
-          return (
+          return meeting.nextMeeting ? (
             <li key={meeting.id} suppressHydrationWarning>
               <Link href={`/meetings/${meeting.id}`}>{meeting.title}</Link>
               <br />
@@ -45,6 +45,8 @@ const Projects: NextPage = (props: any) => {
                 Add to Calendar
               </a>
             </li>
+          ) : (
+            "No upcoming meetings"
           );
         })}
       </ul>
@@ -95,12 +97,12 @@ export async function getServerSideProps(context) {
   }
 
   for (const meeting of project.meetings) {
-    const nextMeeting = getNextOccurrence(meeting);
+    const { startTime: nextMeeting, instance } = getNextOccurrence(meeting);
 
     (meeting as any).nextMeeting = nextMeeting;
     (meeting as any).gcalEventLink = generateEventLink(
       meeting.gcal_event_id,
-      nextMeeting
+      instance
     );
   }
 

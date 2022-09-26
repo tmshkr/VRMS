@@ -16,7 +16,7 @@ export function registerJobs(agenda) {
     });
 
     sendMeetingCheckin(meeting);
-    const nextRunAt = getNextOccurrence(meeting);
+    const { startTime: nextRunAt } = getNextOccurrence(meeting);
     if (nextRunAt) {
       job.schedule(nextRunAt);
       job.save();
