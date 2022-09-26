@@ -13,6 +13,8 @@ dayjs.extend(isoWeek);
 dayjs.extend(isSameOrBefore);
 dayjs.extend(isSameOrAfter);
 
+dayjs.tz.guess();
+
 export function findOccurrenceOfWeekday(date: dayjs.Dayjs) {
   let n = 0;
   const month = date.month();
