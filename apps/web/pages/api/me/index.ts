@@ -9,7 +9,7 @@ const router = createRouter<NextApiRequest, NextApiResponse>();
 router.use(withUser).get(handleGet).put(handlePut);
 
 async function handleGet(req, res) {
-  return res.json({ user: req.vrms_user });
+  return res.json({ user: req.user });
 }
 
 async function handlePut(req, res) {
@@ -20,13 +20,13 @@ async function handlePut(req, res) {
   }
 
   try {
-    const { vrms_user } = req;
+    const { user } = req;
     const mongoClient = await getMongoClient();
     await mongoClient
       .db()
       .collection("userProfiles")
       .updateOne(
-        { _id: vrms_user.id },
+        { _id: user.id },
         {
           $set: removeEmpty({ readme, headline, updatedAt: new Date() }),
           $setOnInsert: { createdAt: new Date() },
