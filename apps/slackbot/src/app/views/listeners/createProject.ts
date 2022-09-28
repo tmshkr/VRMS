@@ -8,17 +8,15 @@ export const createProject = async ({ ack, body, view, client, logger }) => {
   const values = getInnerValues(view.state.values);
   const { new_project_title, team_members } = values;
 
-  const projectCreator = await prisma.user
-    .findUnique({
-      where: { slack_id: body.user.id },
-      select: { id: true },
-    })
-    .then((user) => {
-      if (!user) {
-        throw new Error(`Slack user not found: ${body.user.id}`);
-      }
-      return user;
-    });
+  const projectCreator = await prisma.user.findUniqueOrThrow({
+    where: {
+      slack_id_slack_team_id: {
+        slack_id: body.user.id,
+        slack_team_id: body.user.team_id,
+      },
+    },
+    select: { id: true },
+  });
 
   const members: any = await prisma.user.findMany({
     where: {
@@ -52,7 +50,7 @@ export const createProject = async ({ ack, body, view, client, logger }) => {
     },
   });
 
-  const home = await getHomeTab(body.user.id);
+  const home = await getHomeTab(body.user.id, body.user.team_id);
   await client.views.publish(home);
 
   for (const slack_id of team_members.selected_conversations) {

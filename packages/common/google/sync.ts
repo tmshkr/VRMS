@@ -59,9 +59,7 @@ async function handleEvents(events) {
   // create a new Meeting if it wasn't found in the database
   const toCreate = new Set(eventIds);
   for (const record of meetings) {
-    if (toCreate.has(record.gcal_event_id)) {
-      toCreate.delete(record.gcal_event_id);
-    }
+    toCreate.delete(record.gcal_event_id);
   }
 
   toCreate.forEach((eventId) => handleCreateMeeting(events, eventId));
@@ -106,9 +104,7 @@ async function handleExceptions(events) {
   // create a new MeetingException if it wasn't found in the database
   const toCreate = new Set(eventIds);
   for (const record of meetingExceptions) {
-    if (toCreate.has(record.gcal_event_id)) {
-      toCreate.delete(record.gcal_event_id);
-    }
+    toCreate.delete(record.gcal_event_id);
   }
 
   toCreate.forEach((eventId) => handleCreateMeetingException(events, eventId));
@@ -126,7 +122,9 @@ async function handleExceptions(events) {
 
 async function handleCreateMeeting(events, eventId) {
   const event = events[eventId];
-  const meeting_id = Number(event.extendedProperties?.private?.vrms_meeting_id);
+  const meeting_id = parseInt(
+    event.extendedProperties?.private?.vrms_meeting_id
+  );
   if (!meeting_id) return;
 
   const oldMeeting = await prisma.meeting.findUnique({

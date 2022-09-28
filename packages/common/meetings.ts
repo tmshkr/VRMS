@@ -65,7 +65,7 @@ export function getNextOccurrence(
 }
 
 export async function scheduleNextCheckin(
-  meeting_id: number,
+  meeting_id: bigint,
   sendAt?: Date // provide the Date if known
 ) {
   let nextRunAt;
@@ -83,7 +83,7 @@ export async function scheduleNextCheckin(
   const [job] = await agenda.jobs(
     {
       name: "sendMeetingCheckin",
-      data: { meeting_id },
+      data: { meeting_id: meeting_id.toString() },
     },
     undefined,
     1
@@ -96,7 +96,7 @@ export async function scheduleNextCheckin(
       console.log(`Updated job to run at ${nextRunAt}`);
     } else {
       await agenda.schedule(nextRunAt, "sendMeetingCheckin", {
-        meeting_id,
+        meeting_id: meeting_id.toString(),
       });
       console.log(`Scheduled job to run at ${nextRunAt}`);
     }

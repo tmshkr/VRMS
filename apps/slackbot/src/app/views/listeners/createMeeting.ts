@@ -2,10 +2,10 @@ import prisma from "common/prisma";
 import { RRule } from "rrule";
 import { getPseudoUTC } from "common/rrule";
 import dayjs from "common/dayjs";
-import { getAgenda } from "common/agenda";
 import { getHomeTab } from "app/views/home";
 import { getInnerValues } from "utils/getInnerValues";
 import { createCalendarEvent, patchCalendarEvent } from "common/google";
+import { scheduleNextCheckin } from "common/meetings";
 
 export const createMeeting = async ({ ack, body, view, client, logger }) => {
   await ack();
@@ -22,7 +22,12 @@ export const createMeeting = async ({ ack, body, view, client, logger }) => {
   } = getInnerValues(view.state.values);
 
   const meetingCreator = await prisma.user.findUniqueOrThrow({
-    where: { slack_id: body.user.id },
+    where: {
+      slack_id_slack_team_id: {
+        slack_id: body.user.id,
+        slack_team_id: body.user.team_id,
+      },
+    },
     select: { id: true, timezone: true },
   });
 
@@ -106,16 +111,13 @@ export const createMeeting = async ({ ack, body, view, client, logger }) => {
   await patchCalendarEvent(gcalEvent.id, {
     extendedProperties: {
       private: {
-        vrms_meeting_id: newMeeting.id,
-        vrms_project_id: newMeeting.project_id,
+        vrms_meeting_id: newMeeting.id.toString(),
+        vrms_project_id: newMeeting.project_id.toString(),
       },
     },
   });
 
-  const agenda = await getAgenda();
-  await agenda.schedule(start_time, "sendMeetingCheckin", {
-    meeting_id: newMeeting.id,
-  });
+  scheduleNextCheckin(newMeeting.id, newMeeting.start_time);
 
   for (const slack_id of meeting_participants.selected_conversations) {
     await client.chat.postMessage({
@@ -133,6 +135,6 @@ export const createMeeting = async ({ ack, body, view, client, logger }) => {
     });
   }
 
-  const home = await getHomeTab(body.user.id);
+  const home = await getHomeTab(body.user.id, body.user.team_id);
   await client.views.publish(home);
 };
