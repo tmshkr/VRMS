@@ -20,7 +20,7 @@ enum AppRole {
 }
 
 model AppRoleOnUser {
-  user_id Int
+  user_id BigInt
   role    AppRole
 
   created_at DateTime @default(now())
@@ -31,49 +31,25 @@ model AppRoleOnUser {
   @@id([user_id, role])
 }
 
-model Account {
-  provider            String
-  provider_account_id String
-
-  access_token              String  @db.Text
-  email                     String
-  gh_username               String?
-  name                      String
-  scope                     String
-  token_type                String
-  type                      String
-  two_factor_authentication Boolean
-  vrms_user_id              Int
-
-  created_at DateTime @default(now())
-  updated_at DateTime @default(now()) @updatedAt
-
-  user User @relation(fields: [vrms_user_id], references: [id])
-
-  @@id([provider, provider_account_id])
-  @@unique([provider, vrms_user_id])
-}
-
 model User {
-  id Int @id @default(autoincrement())
+  id   BigInt @id @default(autoincrement())
 
-  checkins             MeetingCheckin[]
-  completed_onboarding Boolean          @default(false)
-  email                String           @unique
+  completed_onboarding Boolean @default(false)
+  email                String
   first_name           String
   last_name            String
   real_name            String
   profile_image        String
-  slack_id             String           @unique
+  slack_id             String
   slack_team_id        String
   timezone             String
-  username             String?          @unique
+  username             String  @unique // default `${slugify(user.real_name.toLowerCase())}-${cuid.slug()}`
 
   created_at DateTime @default(now())
   updated_at DateTime @default(now()) @updatedAt
 
-  accounts            Account[]
   app_roles           AppRoleOnUser[]
+  checkins            MeetingCheckin[]
   created_meetings    Meeting[]
   created_projects    Project[]
   meeting_assignments MeetingParticipant[]
@@ -81,7 +57,8 @@ model User {
   participants_added  MeetingParticipant[] @relation("AddParticipant")
   team_assignments    TeamMember[]
 
-  @@index(slack_id)
+  @@unique([slack_id, slack_team_id])
+  @@index([slack_id, slack_team_id])
   @@index(username)
 }
 
@@ -92,12 +69,13 @@ enum ProjectStatus {
 }
 
 model Project {
-  id Int @id @default(autoincrement())
+  id   BigInt @id @default(autoincrement())
 
-  created_by_id   Int
+  created_by_id   BigInt
   created_by_user User          @relation(fields: [created_by_id], references: [id])
   meetings        Meeting[]
   name            String
+  slug            String?       @unique
   status          ProjectStatus @default(ACTIVE)
   team_members    TeamMember[]
 
@@ -118,10 +96,10 @@ enum MemberStatus {
 }
 
 model TeamMember {
-  user_id    Int
-  project_id Int
+  user_id    BigInt
+  project_id BigInt
 
-  added_by_id Int
+  added_by_id BigInt
   status      MemberStatus @default(ACTIVE)
   role        ProjectRole  @default(MEMBER)
   position    String?
@@ -145,7 +123,7 @@ enum MeetingStatus {
 }
 
 model Meeting {
-  id Int @id @default(autoincrement())
+  id   BigInt @id @default(autoincrement())
 
   title            String
   description      String
@@ -153,8 +131,8 @@ model Meeting {
   end_time         DateTime
   gcal_event_id    String        @unique
   rrule            String?
-  project_id       Int
-  created_by_id    Int
+  project_id       BigInt
+  created_by_id    BigInt
   slack_channel_id String
   status           MeetingStatus @default(CONFIRMED)
 
@@ -169,7 +147,7 @@ model Meeting {
 }
 
 model MeetingException {
-  meeting_id Int
+  meeting_id BigInt
   instance   DateTime
 
   start_time    DateTime?
@@ -187,11 +165,11 @@ model MeetingException {
 }
 
 model MeetingParticipant {
-  meeting_id   Int
-  user_id      Int
+  meeting_id   BigInt
+  user_id      BigInt
   meeting_time DateTime // use new Date(0) to represent the default for a given meeting/user combination
 
-  added_by_id Int
+  added_by_id BigInt
   is_active   Boolean @default(true)
 
   created_at DateTime @default(now())
@@ -207,8 +185,8 @@ model MeetingParticipant {
 }
 
 model MeetingCheckin {
-  meeting_id   Int
-  user_id      Int
+  meeting_id   BigInt
+  user_id      BigInt
   meeting_time DateTime
 
   created_at DateTime @default(now())
