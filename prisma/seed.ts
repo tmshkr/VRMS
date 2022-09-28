@@ -3,6 +3,8 @@ if (process.env.NODE_ENV !== "production") {
 }
 const { App } = require("@slack/bolt");
 import { PrismaClient } from "@prisma/client";
+import cuid from "cuid";
+const slugify = require("slugify");
 const prisma: PrismaClient = new PrismaClient();
 
 // Initialize app
@@ -28,6 +30,7 @@ const app = new App({
           email: user.profile.email,
           profile_image: user.profile.image_512,
           timezone: user.tz,
+          username: `${slugify(user.real_name.toLowerCase())}-${cuid.slug()}`,
         };
       });
   });

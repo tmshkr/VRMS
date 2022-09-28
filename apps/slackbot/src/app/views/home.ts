@@ -3,20 +3,12 @@ import dayjs from "common/dayjs";
 import { generateEventLink } from "common/google";
 import { getNextOccurrence } from "common/meetings";
 import axios from "axios";
-const jwt = require("jsonwebtoken");
 
-export const getHomeTab = async (slack_id: string) => {
-  const {
-    id: vrms_user_id,
-    accounts,
-    team_assignments,
-    meeting_assignments,
-    timezone,
-  } = await prisma.user
-    .findUnique({
-      where: { slack_id },
+export const getHomeTab = async (slack_id: string, slack_team_id: string) => {
+  const { team_assignments, meeting_assignments, timezone } =
+    await prisma.user.findUniqueOrThrow({
+      where: { slack_id_slack_team_id: { slack_id, slack_team_id } },
       include: {
-        accounts: true,
         team_assignments: {
           orderBy: { created_at: "asc" },
           select: { project: true },
@@ -27,20 +19,12 @@ export const getHomeTab = async (slack_id: string) => {
           select: {
             meeting: {
               include: {
-                exceptions: {
-                  orderBy: { start_time: "asc" },
-                },
+                exceptions: true,
               },
             },
           },
         },
       },
-    })
-    .then((user) => {
-      if (!user) {
-        throw new Error(`Slack user not found: ${slack_id}`);
-      }
-      return user;
     });
 
   return {
@@ -66,15 +50,9 @@ export const getHomeTab = async (slack_id: string) => {
             type: "button",
             text: {
               type: "plain_text",
-              text: accounts.length ? "Open Dashboard" : "Connect Account",
-              emoji: true,
+              text: "Open Dashboard",
             },
-            url: accounts.length
-              ? process.env.NEXTAUTH_URL
-              : `${process.env.NEXTAUTH_URL}/api/connect/slack?token=${jwt.sign(
-                  { vrms_user_id, slack_id },
-                  process.env.NEXTAUTH_SECRET
-                )}`,
+            url: process.env.NEXTAUTH_URL,
             action_id: "open_dashboard",
             style: "primary",
           },
