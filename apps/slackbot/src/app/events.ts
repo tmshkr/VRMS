@@ -16,7 +16,7 @@ export const registerEvents = () => {
       }
     }
   });
-  app.event("team_join", async ({ event, client, logger, team_id }) => {
+  app.event("team_join", async ({ event, client, logger }) => {
     const { user } = event;
     if (!user.is_bot) {
       await prisma.user.create({
