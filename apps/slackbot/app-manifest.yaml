@@ -1,5 +1,5 @@
 display_information:
-  name: VRMS-dev-YOUR-NAME
+  name: VRMS-dev-tlin
   description: VRMS dev app
   background_color: "#2f3e6b"
 features:
@@ -8,7 +8,7 @@ features:
     messages_tab_enabled: true
     messages_tab_read_only_enabled: false
   bot_user:
-    display_name: VRMS-dev-YOUR-NAME
+    display_name: VRMS-dev-tlin
     always_online: true
 oauth_config:
   redirect_urls:
