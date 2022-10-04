@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Disclosure, Menu, Transition } from "@headlessui/react";
 import { MenuIcon, XIcon } from "@heroicons/react/outline";
 import { getPathRoot } from "utils/path";
-import Logo from "assets/logo-hfla.svg";
+import robot from "assets/meetbot.png";
 
 import { useAppDispatch, useAppSelector } from "src/store";
 import { fetchUser, clearUser, selectUser } from "src/store/user";
@@ -30,7 +30,6 @@ export function Dashboard({ children }) {
 
   const pathRoot = getPathRoot(router.pathname);
   const navigation = [
-    { name: "Dashboard", href: "/", current: pathRoot === "/" },
     { name: "Meetings", href: "/meetings", current: pathRoot === "/meetings" },
     { name: "Projects", href: "/projects", current: pathRoot === "/projects" },
     { name: "People", href: "/people", current: pathRoot === "/people" },
@@ -59,7 +58,10 @@ export function Dashboard({ children }) {
                       <div className="flex-shrink-0 flex items-center">
                         <Link href="/">
                           <a className="hover:bg-transparent">
-                            <Logo className="w-12 cursor-pointer" />
+                            <img
+                              src={robot.src}
+                              className="w-8 cursor-pointer"
+                            />
                           </a>
                         </Link>
                       </div>

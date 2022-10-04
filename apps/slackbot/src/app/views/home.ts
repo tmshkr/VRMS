@@ -36,7 +36,7 @@ export const getHomeTab = async (slack_id: string, slack_team_id: string) => {
           type: "header",
           text: {
             type: "plain_text",
-            text: `:house: Welcome to VRMS`,
+            text: `:house: Welcome to Meetbot`,
             emoji: true,
           },
         },
