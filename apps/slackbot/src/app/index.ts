@@ -26,6 +26,7 @@ if (process.env.NODE_ENV === "development") {
   appConfig.installationStore = installationStore;
   appConfig.installerOptions = {
     redirectUriPath: "/slack/oauth_redirect",
+    directInstall: true,
   };
 }
 
