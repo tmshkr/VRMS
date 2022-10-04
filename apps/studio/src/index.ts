@@ -34,20 +34,15 @@ app.use(async (req, res, next) => {
     return;
   }
 
-  const { provider, provider_account_id } = payload;
-  const app_roles: any = await prisma.account
+  const { provider_account_id } = payload;
+  const app_roles: any = await prisma.user
     .findUnique({
-      where: {
-        provider_provider_account_id: {
-          provider,
-          provider_account_id,
-        },
-      },
-      select: { user: { select: { app_roles: true } } },
+      where: { slack_id: provider_account_id },
+      select: { app_roles: true },
     })
     .then((result) => {
       if (!result) return [];
-      return result.user.app_roles.map(({ role }) => role);
+      return result.app_roles.map(({ role }) => role);
     });
 
   if (app_roles.includes("ADMIN")) {
