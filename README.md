@@ -1,4 +1,4 @@
-# vrms
+# meetbot
 
 ## Overview
 
@@ -35,8 +35,8 @@ Once you've [forked](https://github.com/tmshkr/vrms/fork) the repository,
 clone it to your local machine and install the dependencies:
 
 ```
-git clone https://github.com/YOUR_USERNAME/vrms.git
-cd vrms && npm install
+git clone https://github.com/YOUR_USERNAME/meetbot.git
+cd meetbot && npm install
 ```
 
 ### Create your `.env` file
