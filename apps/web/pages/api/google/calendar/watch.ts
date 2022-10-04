@@ -6,6 +6,7 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  console.log(req.headers);
   const id = req.headers["x-goog-channel-id"];
   const mongoClient = await getMongoClient();
   const doc = await mongoClient
