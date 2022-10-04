@@ -1,7 +1,5 @@
 import NextAuth from "next-auth";
 import SlackProvider from "next-auth/providers/slack";
-import prisma from "common/prisma";
-import { getMongoClient } from "common/mongo";
 
 // For more information on each option (and a full list of options) go to
 // https://next-auth.js.org/configuration/options
