@@ -7,7 +7,7 @@ export function registerJobs(agenda) {
   agenda.define("sendMeetingCheckin", async (job) => {
     const { meeting_id } = job.attrs.data;
     const meeting = await prisma.meeting.findUniqueOrThrow({
-      where: { id: meeting_id },
+      where: { id: BigInt(meeting_id) },
       include: {
         exceptions: {
           orderBy: { start_time: "asc" },
