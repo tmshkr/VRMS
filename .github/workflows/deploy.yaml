@@ -25,7 +25,9 @@ jobs:
         id: branch-name
         uses: tj-actions/branch-names@v6
       - name: Set server_name
-        run: node nginx/server_name.js ${{ secrets.SERVER_NAMES }}
+        run: node nginx/server_name.js $SERVER_NAMES
+        env:
+          SERVER_NAMES: ${{ secrets.SERVER_NAMES }}
       - name: Generate deployment package
         run: zip -r deploy.zip . -x '*.git*'
       - name: Deploy to EB
