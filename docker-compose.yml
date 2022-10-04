@@ -2,7 +2,7 @@ version: "3"
 
 services:
   app:
-    image: tmshkr/vrms:${ENVIRONMENT}
+    image: tmshkr/meetbot:${ENVIRONMENT}
     command: npm run start
     env_file:
       - .env
@@ -28,7 +28,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 100m
+          memory: 50m
 
 volumes:
   nginx_secrets:
