@@ -23,6 +23,7 @@ export const withUser = async (req, res, next) => {
     });
 
     (user as any).app_roles = user.app_roles.map(({ role }) => role);
+    (user as any).id = user.id.toString();
     req.user = user;
 
     return next();
