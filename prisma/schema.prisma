@@ -145,6 +145,8 @@ model Meeting {
   exceptions      MeetingException[]
   participants    MeetingParticipant[]
   project         Project              @relation(fields: [project_id], references: [id])
+
+  @@index(gcal_event_id)
 }
 
 model MeetingException {
@@ -163,6 +165,7 @@ model MeetingException {
   @@id([meeting_id, instance])
   @@index(meeting_id)
   @@index(instance)
+  @@index(gcal_event_id)
 }
 
 model MeetingParticipant {
