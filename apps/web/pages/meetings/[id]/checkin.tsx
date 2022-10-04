@@ -23,7 +23,7 @@ export default MeetingCheckinPage;
 
 export async function getServerSideProps(context) {
   const { req, res, params } = context;
-  const id = Number(params.id);
+  const id = BigInt(params.id);
 
   if (!id) {
     return {
@@ -44,32 +44,14 @@ export async function getServerSideProps(context) {
     };
   }
 
-  try {
-    const { provider, provider_account_id } = nextToken;
-    var { user } = await prisma.account.findUniqueOrThrow({
-      where: {
-        provider_provider_account_id: {
-          provider,
-          provider_account_id,
-        },
-      },
-      select: {
-        user: {
-          select: {
-            id: true,
-            slack_id: true,
-          },
-        },
-      },
-    });
-  } catch (err) {
-    return {
-      redirect: {
-        destination: `/onboard`,
-        permanent: false,
-      },
-    };
-  }
+  const { provider_account_id } = nextToken;
+  const user = await prisma.user.findUniqueOrThrow({
+    where: { slack_id: provider_account_id },
+    select: {
+      id: true,
+      slack_id: true,
+    },
+  });
 
   const meeting = await prisma.meeting.findUnique({
     where: { id },
