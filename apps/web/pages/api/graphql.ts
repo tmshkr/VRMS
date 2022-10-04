@@ -1,8 +1,12 @@
+(BigInt as any).prototype.toJSON = function () {
+  return this.toString();
+};
 import { createServer } from "@graphql-yoga/node";
 import prisma from "common/prisma";
 
 const typeDefs = `
   scalar DateTime
+  scalar BigInt
 
   type Query {
     users: [User]
@@ -11,7 +15,7 @@ const typeDefs = `
   }
 
   type User {
-    id: Int
+    id: BigInt
     slack_id: String
     meetings: [Meeting]
     projects: [Project]
@@ -19,7 +23,7 @@ const typeDefs = `
   }
   
   type Project {
-    id: Int
+    id: BigInt
     created_by: String
     is_active: Boolean
     meetings: [Meeting]
@@ -28,16 +32,17 @@ const typeDefs = `
   }
 
   type Meeting {
-    id: Int
+    id: BigInt
     created_by: String
-    duration: Int
     is_active: Boolean
     project: Project!
-    project_id: Int
+    project_id: BigInt
     rrule: String
     slack_channel_id: String
-    start_date: DateTime
+    start_time: DateTime
+    end_time: DateTime
     title: String
+    description: String
     meetingParticipants: [User]
   }
 `;
