@@ -22,7 +22,7 @@ const LandingPage = () => {
           to your Slack workspace, join the{" "}
           <a
             target="_blank"
-            rel="noopener noreferer"
+            rel="noopener noreferrer"
             href="https://join.slack.com/t/meetbot-hq/shared_invite/zt-1dlft3msj-pFun_ML7fDHXywkTelYGRw"
           >
             meetbot community
@@ -30,7 +30,7 @@ const LandingPage = () => {
           to try it out first, or even run your own{" "}
           <a
             target="_blank"
-            rel="noopener noreferer"
+            rel="noopener noreferrer"
             href="https://meetbot.dev"
           >
             meetbot server
