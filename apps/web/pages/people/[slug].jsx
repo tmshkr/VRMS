@@ -209,19 +209,10 @@ export async function getServerSideProps(context) {
     },
   };
 
-  // URL slug param can be either a username or a user id
-  let user;
-  if (Number(slug)) {
-    user = await prisma.user.findUnique({
-      where: { id: Number(slug) },
-      select,
-    });
-  } else {
-    user = await prisma.user.findUnique({
-      where: { username: slug },
-      select,
-    });
-  }
+  const user = await prisma.user.findUnique({
+    where: { username: slug },
+    select,
+  });
 
   if (!user) {
     return {
@@ -246,12 +237,12 @@ export async function getServerSideProps(context) {
   const doc = await mongoClient
     .db()
     .collection("userProfiles")
-    .findOne({ _id: user.id });
+    .findOne({ _id: user.id.toString() });
 
   return {
     props: {
       profile: {
-        id,
+        id: id.toString(),
         headline: doc?.headline || "",
         first_name,
         profile_image,
