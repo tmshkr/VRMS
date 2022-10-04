@@ -46,11 +46,11 @@ function Login({ children }) {
     }
   }, [status]);
 
-  useEffect(() => {
-    if (user && !user.completed_onboarding) {
-      router.push("/onboard");
-    }
-  }, [user]);
+  // useEffect(() => {
+  //   if (user && !user.completed_onboarding) {
+  //     router.push("/onboard");
+  //   }
+  // }, [user]);
 
   return children;
 }
