@@ -20,7 +20,7 @@ export default function SignInButton({ user }) {
   ) : (
     <a
       href={`/api/auth/signin`}
-      className="text-white py-3 px-4 rounded-md no-underline bg-blue-600"
+      className="text-white py-3 px-4 rounded-md no-underline bg-blue-500 hover:bg-blue-400"
       onClick={(e) => {
         e.preventDefault();
         signIn();
