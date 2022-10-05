@@ -14,10 +14,23 @@ const appConfig: any = {
   appToken: process.env.SLACK_APP_TOKEN,
   clientId: process.env.SLACK_CLIENT_ID,
   clientSecret: process.env.SLACK_CLIENT_SECRET,
-  scopes: ["channels:history", "chat:write", "commands"],
+  scopes: [
+    "channels:history",
+    "channels:join",
+    "chat:write",
+    "chat:write.public",
+    "commands",
+    "groups:history",
+    "im:history",
+    "im:read",
+    "im:write",
+    "mpim:history",
+    "users:read",
+    "users:read.email",
+  ],
 };
 
-if (process.env.NODE_ENV === "development") {
+if (!process.env.ENABLE_DISTRIBUTION) {
   appConfig.token = process.env.SLACK_BOT_TOKEN;
 } else {
   appConfig.port = 8000;
