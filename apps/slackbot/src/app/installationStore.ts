@@ -1,8 +1,10 @@
 import { getMongoClient } from "common/mongo";
+import { seedUsers } from "common/slack/seedUsers";
 
 export const installationStore = {
   storeInstallation: async (installation) => {
     const mongoClient = await getMongoClient();
+    seedUsers(installation);
     if (
       installation.isEnterpriseInstall &&
       installation.enterprise !== undefined
