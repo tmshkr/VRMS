@@ -19,7 +19,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: build
-    environment: staging
+    environment: [staging, main]
     steps:
       - uses: actions/checkout@v2
       - name: Get branch name
@@ -28,7 +28,7 @@ jobs:
       - name: Set server_name
         env:
           SERVER_NAMES: ${{ secrets.SERVER_NAMES }}
-        run: node nginx/server_name.js $SERVER_NAMES
+        run: node nginx/server_name.js "$SERVER_NAMES"
       - name: Generate deployment package
         run: zip -r deploy.zip . -x '*.git*'
       - name: Deploy to EB
