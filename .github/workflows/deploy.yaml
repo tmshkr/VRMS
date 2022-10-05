@@ -19,7 +19,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: build
-    environment: staging
+    environment: [staging, main]
     steps:
       - uses: actions/checkout@v2
       - name: Get branch name
