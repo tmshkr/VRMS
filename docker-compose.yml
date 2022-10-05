@@ -28,7 +28,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 50m
+          memory: 100m
 
 volumes:
   nginx_secrets:
