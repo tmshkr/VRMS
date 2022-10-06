@@ -1,6 +1,5 @@
 const { App } = require("@slack/bolt");
-import { PrismaClient } from "@prisma/client";
-const prisma: PrismaClient = new PrismaClient();
+import prisma from "common/prisma";
 import { getSlug } from "common/slug";
 
 export async function seedUsers(installation) {
