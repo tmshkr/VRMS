@@ -6,6 +6,7 @@ const { google } = require("googleapis");
 import { patchCalendarEvent } from "common/google";
 import { getAgenda } from "common/agenda";
 import { scheduleNextCheckin } from "common/meetings";
+import { getSlug } from "common/slug";
 
 export async function syncMeetings() {
   const mongoClient = await getMongoClient();
@@ -156,10 +157,12 @@ async function handleCreateMeeting(events, eventId) {
       gcal_event_id: event.id,
       project_id: oldMeeting.project_id,
       slack_channel_id: oldMeeting.slack_channel_id,
+      slack_team_id: oldMeeting.slack_team_id,
       rrule: generateRRuleFromEvent(event),
       start_time: new Date(event.start.dateTime),
       title: event.summary,
       description: event.description,
+      slug: getSlug(event.summary),
       participants: { create: oldMeeting.participants },
     },
   });

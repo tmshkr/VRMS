@@ -1,8 +1,7 @@
 const { App } = require("@slack/bolt");
 import { PrismaClient } from "@prisma/client";
-import cuid from "cuid";
-const slugify = require("slugify");
 const prisma: PrismaClient = new PrismaClient();
+import { getSlug } from "common/slug";
 
 export async function seedUsers(installation) {
   const { team, bot } = installation;
@@ -26,7 +25,7 @@ export async function seedUsers(installation) {
           email: user.profile.email,
           profile_image: user.profile.image_512,
           timezone: user.tz,
-          username: `${slugify(user.real_name.toLowerCase())}-${cuid.slug()}`,
+          username: getSlug(user.real_name),
         };
       });
   });

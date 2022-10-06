@@ -6,6 +6,7 @@ import { getHomeTab } from "app/views/home";
 import { getInnerValues } from "utils/getInnerValues";
 import { createCalendarEvent, patchCalendarEvent } from "common/google";
 import { scheduleNextCheckin } from "common/meetings";
+import { getSlug } from "common/slug";
 
 export const createMeeting = async ({ ack, body, view, client, logger }) => {
   await ack();
@@ -95,9 +96,11 @@ export const createMeeting = async ({ ack, body, view, client, logger }) => {
       project_id: Number(meeting_project.selected_option.value),
       rrule: rule?.toString(),
       slack_channel_id: meeting_channel.selected_channel,
+      slack_team_id: body.user.team_id,
       start_time: start_time.toDate(),
       title: meeting_title.value,
       description: meeting_description.value,
+      slug: getSlug(meeting_title.value),
       participants: {
         create: participants.map(({ id }) => ({
           user_id: id,
@@ -132,6 +135,15 @@ export const createMeeting = async ({ ack, body, view, client, logger }) => {
           },
         },
       ],
+    });
+  }
+
+  if (
+    participants.length !== meeting_participants.selected_conversations.length
+  ) {
+    await client.chat.postMessage({
+      channel: body.user.id,
+      text: `It looks like you selected a Slack Connect user. Unfortunately, Slack Connect users are not currently supported.`,
     });
   }
 
