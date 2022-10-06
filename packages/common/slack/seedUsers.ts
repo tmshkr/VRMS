@@ -38,12 +38,13 @@ async function createUsers(app, cursor?: string) {
       };
     });
 
-  const { count } = await prisma.user.createMany({
-    data: users,
-    skipDuplicates: true,
-  });
-
-  console.log(`created ${count} users`);
+  if (users.length > 0) {
+    const { count } = await prisma.user.createMany({
+      data: users,
+      skipDuplicates: true,
+    });
+    console.log(`created ${count} users`);
+  }
 
   if (next_cursor) {
     await createUsers(app, next_cursor);
