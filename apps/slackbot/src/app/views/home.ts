@@ -20,6 +20,11 @@ export const getHomeTab = async (slack_id: string, slack_team_id: string) => {
             meeting: {
               include: {
                 exceptions: true,
+                project: {
+                  select: {
+                    gcal_calendar_id: true,
+                  },
+                },
               },
             },
           },
@@ -160,7 +165,8 @@ function renderMeeting(meeting, userTimezone) {
             .tz(userTimezone)
             .format("dddd, MMMM D, h:mm a")} – <${generateEventLink(
             meeting.gcal_event_id,
-            instance
+            instance,
+            meeting.project.gcal_calendar_id
           )}|Add to Calendar>`,
         },
       }

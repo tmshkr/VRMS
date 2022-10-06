@@ -32,6 +32,11 @@ export const createMeeting = async ({ ack, body, view, client, logger }) => {
     select: { id: true, timezone: true },
   });
 
+  const { gcal_calendar_id } = await prisma.project.findUniqueOrThrow({
+    where: { id: BigInt(meeting_project.selected_option.value) },
+    select: { gcal_calendar_id: true },
+  });
+
   const start_time = dayjs.tz(
     `${meeting_datepicker.selected_date} ${meeting_timepicker.selected_time}`,
     meetingCreator.timezone
@@ -69,22 +74,25 @@ export const createMeeting = async ({ ack, body, view, client, logger }) => {
     select: { id: true, email: true, slack_id: true },
   });
 
-  const gcalEvent = await createCalendarEvent({
-    summary: meeting_title.value,
-    description: meeting_description.value,
-    start: {
-      dateTime: start_time,
-      timeZone: meetingCreator.timezone,
+  const gcalEvent = await createCalendarEvent(
+    {
+      summary: meeting_title.value,
+      description: meeting_description.value,
+      start: {
+        dateTime: start_time,
+        timeZone: meetingCreator.timezone,
+      },
+      end: {
+        dateTime: start_time.add(
+          Number(meeting_duration.selected_option.value),
+          "minutes"
+        ),
+        timeZone: meetingCreator.timezone,
+      },
+      recurrence: [rule?.toString().split("\n")[1]],
     },
-    end: {
-      dateTime: start_time.add(
-        Number(meeting_duration.selected_option.value),
-        "minutes"
-      ),
-      timeZone: meetingCreator.timezone,
-    },
-    recurrence: [rule?.toString().split("\n")[1]],
-  });
+    gcal_calendar_id
+  );
 
   const newMeeting = await prisma.meeting.create({
     data: {
@@ -93,7 +101,7 @@ export const createMeeting = async ({ ack, body, view, client, logger }) => {
         .add(Number(meeting_duration.selected_option.value), "minutes")
         .toDate(),
       gcal_event_id: gcalEvent.id,
-      project_id: Number(meeting_project.selected_option.value),
+      project_id: BigInt(meeting_project.selected_option.value),
       rrule: rule?.toString(),
       slack_channel_id: meeting_channel.selected_channel,
       slack_team_id: body.user.team_id,
@@ -111,11 +119,11 @@ export const createMeeting = async ({ ack, body, view, client, logger }) => {
     },
   });
 
-  await patchCalendarEvent(gcalEvent.id, {
+  await patchCalendarEvent(gcalEvent.id, gcal_calendar_id, {
     extendedProperties: {
       private: {
-        vrms_meeting_id: newMeeting.id.toString(),
-        vrms_project_id: newMeeting.project_id.toString(),
+        mb_meeting_id: newMeeting.id.toString(),
+        mb_project_id: newMeeting.project_id.toString(),
       },
     },
   });

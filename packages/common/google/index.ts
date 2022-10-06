@@ -14,20 +14,24 @@ export function getAuth() {
   return auth;
 }
 
-export async function createCalendarEvent(event) {
+export async function createCalendarEvent(event, calendarId: string) {
   const calendar = google.calendar({ version: "v3", auth: getAuth() });
   const { data } = await calendar.events.insert({
-    calendarId: process.env.GOOGLE_CALENDAR_ID,
+    calendarId,
     resource: event,
   });
   return data;
 }
 
-export async function patchCalendarEvent(eventId, requestBody) {
+export async function patchCalendarEvent(
+  eventId: string,
+  calendarId: string,
+  requestBody
+) {
   const calendar = google.calendar({ version: "v3", auth: getAuth() });
   const { data } = await calendar.events.patch({
-    calendarId: process.env.GOOGLE_CALENDAR_ID,
     eventId,
+    calendarId,
     requestBody,
   });
   return data;
@@ -35,7 +39,8 @@ export async function patchCalendarEvent(eventId, requestBody) {
 
 export function generateEventLink(
   gcalEventId: string,
-  eventInstance: Date | undefined
+  eventInstance: Date | undefined,
+  calendarId: string
 ) {
   if (!eventInstance) return;
 
@@ -45,7 +50,7 @@ export function generateEventLink(
     Buffer.from(
       `${gcalEventId}_${dayjs(eventInstance)
         .utc()
-        .format("YYYYMMDDTHHmmss[Z]")} ${process.env.GOOGLE_CALENDAR_ID}`
+        .format("YYYYMMDDTHHmmss[Z]")} ${calendarId}`
     )
       .toString("base64")
       .replace(/=/g, "")
@@ -55,7 +60,7 @@ export function generateEventLink(
 }
 
 // TODO: fetch paginated results
-export async function getEvents(calendarId, syncToken) {
+export async function getEvents(calendarId: string, syncToken: string) {
   const calendar = google.calendar({ version: "v3", auth: getAuth() });
   try {
     var { data } = await calendar.events.list({

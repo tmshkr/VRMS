@@ -8,17 +8,14 @@ import { getAgenda } from "common/agenda";
 import { scheduleNextCheckin } from "common/meetings";
 import { getSlug } from "common/slug";
 
-export async function syncMeetings() {
+export async function syncMeetings(calendarId: string) {
   const mongoClient = await getMongoClient();
   const doc = await mongoClient
     .db()
     .collection("gcalSyncTokens")
-    .findOne({ _id: process.env.GOOGLE_CALENDAR_ID });
+    .findOne({ _id: calendarId });
 
-  const { items, nextSyncToken } = await getEvents(
-    process.env.GOOGLE_CALENDAR_ID,
-    doc?.syncToken
-  );
+  const { items, nextSyncToken } = await getEvents(calendarId, doc?.syncToken);
 
   const events = {};
   const exceptions = {};
@@ -37,7 +34,7 @@ export async function syncMeetings() {
     .db()
     .collection("gcalSyncTokens")
     .updateOne(
-      { _id: process.env.GOOGLE_CALENDAR_ID },
+      { _id: calendarId },
       {
         $set: { syncToken: nextSyncToken, updatedAt: new Date() },
         $setOnInsert: { createdAt: new Date() },
@@ -123,9 +120,7 @@ async function handleExceptions(events) {
 
 async function handleCreateMeeting(events, eventId) {
   const event = events[eventId];
-  const meeting_id = parseInt(
-    event.extendedProperties?.private?.vrms_meeting_id
-  );
+  const meeting_id = parseInt(event.extendedProperties?.private?.mb_meeting_id);
   if (!meeting_id) return;
 
   const oldMeeting = await prisma.meeting.findUnique({
@@ -140,6 +135,11 @@ async function handleCreateMeeting(events, eventId) {
           meeting_time: true,
           added_by_id: true,
           is_active: true,
+        },
+      },
+      project: {
+        select: {
+          gcal_calendar_id: true,
         },
       },
     },
@@ -167,11 +167,11 @@ async function handleCreateMeeting(events, eventId) {
     },
   });
 
-  await patchCalendarEvent(event.id, {
+  await patchCalendarEvent(event.id, oldMeeting.project.gcal_calendar_id, {
     extendedProperties: {
       private: {
-        vrms_meeting_id: newMeeting.id,
-        vrms_project_id: newMeeting.project_id,
+        mb_meeting_id: newMeeting.id.toString(),
+        mb_project_id: newMeeting.project_id.toString(),
       },
     },
   });
@@ -216,31 +216,31 @@ async function handleCreateMeetingException(exceptions, eventId) {
   scheduleNextCheckin(meeting.id);
 }
 
-export async function createNotificationChannel() {
+export async function createNotificationChannel(calendarId: string) {
   const calendar = google.calendar({ version: "v3", auth: getAuth() });
   const webhookURL = process.env.NGROK_URL // ngrok can be used in development
     ? `${process.env.NGROK_URL}/api/google/calendar/watch`
     : `${process.env.NEXTAUTH_URL}/api/google/calendar/watch`;
 
   const { data: channel } = await calendar.events.watch({
-    calendarId: process.env.GOOGLE_CALENDAR_ID,
+    calendarId,
     requestBody: {
       id: require("crypto").randomUUID(),
       type: "web_hook",
       address: webhookURL,
     },
   });
-  channel.expiration = Number(channel.expiration);
-  channel.address = webhookURL;
 
   const mongoClient = await getMongoClient();
   await mongoClient
     .db()
     .collection("gcalNotificationChannels")
     .insertOne({
-      _id: channel.id,
-      calendarId: process.env.GOOGLE_CALENDAR_ID,
       ...channel,
+      _id: channel.id,
+      calendarId,
+      expiration: Number(channel.expiration),
+      address: webhookURL,
       createdAt: new Date(),
     });
 
@@ -264,22 +264,21 @@ async function stopNotificationChannel(id, resourceId) {
   console.log("channel stopped", { id, resourceId });
 }
 
-export async function initSync() {
+export async function initSync(calendarId) {
   const mongoClient = await getMongoClient();
   const doc = await mongoClient
     .db()
     .collection("gcalNotificationChannels")
-    .findOne({ expiration: { $gt: Date.now() } });
+    .findOne({ calendarId, expiration: { $gt: Date.now() } });
 
   if (!doc) {
-    const channel = await createNotificationChannel();
+    const channel = await createNotificationChannel(calendarId);
     const agenda = await getAgenda();
     agenda.schedule(
       new Date(channel.expiration),
-      "renewGCalNotificationChannel"
+      "renewGCalNotificationChannel",
+      { calendarId }
     );
   }
-
-  syncMeetings();
   console.log("Google Calendar sync initialized");
 }
