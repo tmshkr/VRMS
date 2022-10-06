@@ -6,7 +6,7 @@ import { getNextOccurrence } from "common/meetings";
 export function registerJobs(agenda) {
   agenda.define("sendMeetingCheckin", async (job) => {
     const { meeting_id } = job.attrs.data;
-    const meeting = await prisma.meeting.findUniqueOrThrow({
+    const meeting = await prisma.meeting.findUnique({
       where: { id: BigInt(meeting_id) },
       include: {
         exceptions: {
@@ -14,6 +14,11 @@ export function registerJobs(agenda) {
         },
       },
     });
+
+    if (!meeting) {
+      console.log("meeting not found", { meeting_id });
+      return;
+    }
 
     sendMeetingCheckin(meeting);
     const { startTime: nextRunAt } = getNextOccurrence(meeting);
