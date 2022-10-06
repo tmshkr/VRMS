@@ -119,7 +119,7 @@ export const createMeeting = async ({ ack, body, view, client, logger }) => {
 
   scheduleNextCheckin(newMeeting.id, newMeeting.start_time);
 
-  for (const slack_id of meeting_participants.selected_conversations) {
+  for (const { slack_id } of participants) {
     await client.chat.postMessage({
       channel: slack_id,
       text: `<@${body.user.id}> invited you to a meeting!`,

@@ -38,6 +38,7 @@ export const createProjectModal = async ({ body, client, ack, logger }) => {
             filter: {
               include: ["im"],
               exclude_bot_users: true,
+              exclude_external_shared_channels: true,
             },
           },
           label: {

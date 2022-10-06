@@ -113,6 +113,7 @@ const renderMeetingModal = (team_assignments, slack_id) => ({
         filter: {
           include: ["im"],
           exclude_bot_users: true,
+          exclude_external_shared_channels: true,
         },
       },
       label: {
