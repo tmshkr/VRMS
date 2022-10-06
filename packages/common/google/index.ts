@@ -60,7 +60,7 @@ export function generateEventLink(
 }
 
 // TODO: fetch paginated results
-export async function getEvents(calendarId: string, syncToken: string) {
+export async function getEvents(calendarId: string, syncToken?: string) {
   const calendar = google.calendar({ version: "v3", auth: getAuth() });
   try {
     var { data } = await calendar.events.list({
@@ -71,14 +71,16 @@ export async function getEvents(calendarId: string, syncToken: string) {
   } catch (err: any) {
     if (err.response?.status === 410) {
       console.log("sync token expired, resetting");
-      var { data } = await calendar.events.list({
-        calendarId,
-        singleEvents: false,
-      });
+      getEvents(calendarId);
     } else {
-      throw err;
+      throw new Error(err);
     }
   }
 
+  if (data.accessRole !== "writer") {
+    throw new Error("Must have write access");
+  }
+
+  data.items = data.items.filter((event) => event.visibility !== "private");
   return data;
 }

@@ -181,7 +181,6 @@ async function handleCreateMeeting(events, eventId) {
 
 async function handleCreateMeetingException(exceptions, eventId) {
   const event = exceptions[eventId];
-
   const meeting = await prisma.meeting.findUnique({
     where: { gcal_event_id: event.recurringEventId },
   });
@@ -221,6 +220,15 @@ export async function createNotificationChannel(calendarId: string) {
   const webhookURL = process.env.NGROK_URL // ngrok can be used in development
     ? `${process.env.NGROK_URL}/api/google/calendar/watch`
     : `${process.env.NEXTAUTH_URL}/api/google/calendar/watch`;
+
+  const { data: listData } = await await calendar.events.list({
+    calendarId,
+    maxResults: 1,
+  });
+
+  if (listData.accessRole !== "writer") {
+    throw new Error("Must have write access");
+  }
 
   const { data: channel } = await calendar.events.watch({
     calendarId,

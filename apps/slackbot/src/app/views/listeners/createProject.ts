@@ -2,6 +2,7 @@ import prisma from "common/prisma";
 import { getHomeTab } from "app/views/home";
 import { getInnerValues } from "utils/getInnerValues";
 import { getSlug } from "common/slug";
+import { initSync } from "common/google/sync";
 
 export const createProject = async ({ ack, body, view, client, logger }) => {
   await ack();
@@ -28,6 +29,40 @@ export const createProject = async ({ ack, body, view, client, logger }) => {
     },
     select: { id: true, slack_id: true },
   });
+
+  try {
+    await initSync(gcal_calendar_id.value);
+  } catch (err) {
+    console.error(err);
+    await client.views
+      .open({
+        trigger_id: body.trigger_id,
+        view: {
+          type: "modal",
+          close: {
+            type: "plain_text",
+            text: "Close",
+            emoji: true,
+          },
+          title: {
+            type: "plain_text",
+            text: "There was a problem",
+            emoji: true,
+          },
+          blocks: [
+            {
+              type: "section",
+              text: {
+                type: "mrkdwn",
+                text: "There was a problem syncing your calendar.\n\nCheck that the Calendar ID is correct and that calendar@meetbot-hq.iam.gserviceaccount.com is set as a 'Make changes to events' user.",
+              },
+            },
+          ],
+        },
+      })
+      .catch((err) => console.log(err.data));
+    return;
+  }
 
   await prisma.project.create({
     data: {
