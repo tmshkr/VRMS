@@ -6,8 +6,9 @@ import { getSlug } from "common/slug";
 export const createProject = async ({ ack, body, view, client, logger }) => {
   await ack();
 
-  const values = getInnerValues(view.state.values);
-  const { new_project_title, team_members } = values;
+  const { new_project_title, team_members, gcal_calendar_id } = getInnerValues(
+    view.state.values
+  );
 
   const projectCreator = await prisma.user.findUniqueOrThrow({
     where: {
@@ -32,6 +33,7 @@ export const createProject = async ({ ack, body, view, client, logger }) => {
     data: {
       name: new_project_title.value,
       created_by_id: projectCreator.id,
+      gcal_calendar_id: gcal_calendar_id.value,
       slack_team_id: body.user.team_id,
       slug: getSlug(new_project_title.value),
       team_members: {

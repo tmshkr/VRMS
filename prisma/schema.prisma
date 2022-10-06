@@ -78,15 +78,16 @@ enum ProjectStatus {
 model Project {
   id BigInt @id @default(autoincrement())
 
-  created_by_id   BigInt
-  created_by_user User          @relation(fields: [created_by_id], references: [id])
-  meetings        Meeting[]
-  name            String
-  slack_team_id   String
-  slug            String        @unique
-  status          ProjectStatus @default(ACTIVE)
-  team_members    TeamMember[]
-  visibility      Visibility    @default(PUBLIC)
+  created_by_id    BigInt
+  created_by_user  User          @relation(fields: [created_by_id], references: [id])
+  gcal_calendar_id String
+  meetings         Meeting[]
+  name             String
+  slack_team_id    String
+  slug             String        @unique
+  status           ProjectStatus @default(ACTIVE)
+  team_members     TeamMember[]
+  visibility       Visibility    @default(PUBLIC)
 
   created_at DateTime @default(now())
   updated_at DateTime @default(now()) @updatedAt

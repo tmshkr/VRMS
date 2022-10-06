@@ -26,6 +26,17 @@ export const createProjectModal = async ({ body, client, ack, logger }) => {
         },
         {
           type: "input",
+          label: {
+            type: "plain_text",
+            text: "Google Calendar ID",
+          },
+          element: {
+            type: "plain_text_input",
+            action_id: "gcal_calendar_id",
+          },
+        },
+        {
+          type: "input",
           element: {
             type: "multi_conversations_select",
             placeholder: {
