@@ -10,7 +10,7 @@ export async function seedUsers(installation) {
     signingSecret: process.env.SLACK_SIGNING_SECRET,
   });
 
-  console.log(`fetching users for workspace ${team}`);
+  console.log(`fetching users for workspace ${team.id} ${team.name}`);
   const users = await app.client.users.list().then((res) => {
     return res.members
       .filter((user) => user.is_bot === false && user.name !== "slackbot")
