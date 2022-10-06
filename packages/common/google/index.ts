@@ -1,5 +1,5 @@
 const { google } = require("googleapis");
-import dayjs from "../dayjs";
+import dayjs from "common/dayjs";
 
 export function getAuth() {
   const credentials = JSON.parse(
@@ -59,19 +59,24 @@ export function generateEventLink(
   return gcalEventLink.toString();
 }
 
-// TODO: fetch paginated results
-export async function getEvents(calendarId: string, syncToken?: string) {
+export async function getEvents(
+  calendarId: string,
+  syncToken?: string,
+  pageToken?: string,
+  items: any = []
+) {
   const calendar = google.calendar({ version: "v3", auth: getAuth() });
   try {
     var { data } = await calendar.events.list({
       calendarId,
       singleEvents: false,
       syncToken,
+      pageToken,
     });
   } catch (err: any) {
     if (err.response?.status === 410) {
       console.log("sync token expired, resetting");
-      getEvents(calendarId);
+      return getEvents(calendarId);
     } else {
       throw new Error(err);
     }
@@ -81,6 +86,15 @@ export async function getEvents(calendarId: string, syncToken?: string) {
     throw new Error("Must have write access");
   }
 
-  data.items = data.items.filter((event) => event.visibility !== "private");
-  return data;
+  for (const event of data.items) {
+    if (event.visibility !== "private") {
+      items.push(event);
+    }
+  }
+
+  data.items = items;
+
+  return data.nextPageToken
+    ? getEvents(calendarId, syncToken, data.nextPageToken, items)
+    : data;
 }
