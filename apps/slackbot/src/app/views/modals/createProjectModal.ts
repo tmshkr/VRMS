@@ -36,6 +36,13 @@ export const createProjectModal = async ({ body, client, ack, logger }) => {
           },
         },
         {
+          type: "section",
+          text: {
+            type: "mrkdwn",
+            text: `_Check out the <${process.env.NEXTAUTH_URL}/google-calendar-integration-guide|Google Calendar Integration Guide> for help with this_`,
+          },
+        },
+        {
           type: "input",
           element: {
             type: "multi_conversations_select",
