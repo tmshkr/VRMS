@@ -39,7 +39,7 @@ export const createProjectModal = async ({ body, client, ack, logger }) => {
           type: "section",
           text: {
             type: "mrkdwn",
-            text: `_Check out the <${process.env.NEXTAUTH_URL}/google-calendar-integration-guide|Google Calendar Integration Guide> for help with this_`,
+            text: `_Check out the <${process.env.NEXTAUTH_URL}/integrate-google-calendar|Google Calendar Integration Guide> for help with this_`,
           },
         },
         {
