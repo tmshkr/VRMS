@@ -230,7 +230,7 @@ export async function createNotificationChannel(calendarId: string) {
     throw new Error("Must have write access");
   }
 
-  const { data: channel } = await calendar.events.watch({
+  let { data: channel } = await calendar.events.watch({
     calendarId,
     requestBody: {
       id: require("crypto").randomUUID(),
@@ -239,20 +239,30 @@ export async function createNotificationChannel(calendarId: string) {
     },
   });
 
+  channel = {
+    ...channel,
+    expiration: Number(channel.expiration),
+    _id: channel.id,
+    calendarId,
+    address: webhookURL,
+    createdAt: new Date(),
+  };
+
   const mongoClient = await getMongoClient();
   await mongoClient
     .db()
     .collection("gcalNotificationChannels")
-    .insertOne({
-      ...channel,
-      _id: channel.id,
-      calendarId,
-      expiration: Number(channel.expiration),
-      address: webhookURL,
-      createdAt: new Date(),
-    });
+    .insertOne(channel);
+
+  const agenda = await getAgenda();
+  agenda.schedule(
+    new Date(channel.expiration),
+    "renewGCalNotificationChannel",
+    { calendarId }
+  );
 
   console.log("Google Calendar notification channel created");
+
   return channel;
 }
 
@@ -280,13 +290,7 @@ export async function initSync(calendarId) {
     .findOne({ calendarId, expiration: { $gt: Date.now() } });
 
   if (!doc) {
-    const channel = await createNotificationChannel(calendarId);
-    const agenda = await getAgenda();
-    agenda.schedule(
-      new Date(channel.expiration),
-      "renewGCalNotificationChannel",
-      { calendarId }
-    );
+    await createNotificationChannel(calendarId);
   }
   console.log("Google Calendar sync initialized");
 }
