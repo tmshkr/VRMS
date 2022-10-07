@@ -217,7 +217,7 @@ async function handleCreateMeetingException(exceptions, eventId) {
 
 export async function createNotificationChannel(calendarId: string) {
   const calendar = google.calendar({ version: "v3", auth: getAuth() });
-  const webhookURL = process.env.NGROK_URL // ngrok can be used in development
+  const webhookURL = process.env.NGROK_URL // use ngrok in development
     ? `${process.env.NGROK_URL}/api/google/calendar/watch`
     : `${process.env.NEXTAUTH_URL}/api/google/calendar/watch`;
 
