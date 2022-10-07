@@ -68,7 +68,7 @@ export async function getServerSideProps(context) {
       exceptions: {
         orderBy: { start_time: "asc" },
       },
-      project: { select: { id: true, name: true } },
+      project: { select: { id: true, name: true, gcal_calendar_id: true } },
       participants: {
         select: {
           participant: {
@@ -95,7 +95,11 @@ export async function getServerSideProps(context) {
     props: {
       meeting,
       nextMeeting,
-      gcalEventLink: generateEventLink(meeting.gcal_event_id, instance),
+      gcalEventLink: generateEventLink(
+        meeting.gcal_event_id,
+        instance,
+        meeting.project.gcal_calendar_id
+      ),
     },
   };
 }

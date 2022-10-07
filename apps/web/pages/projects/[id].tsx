@@ -73,6 +73,7 @@ export async function getServerSideProps(context) {
     select: {
       id: true,
       name: true,
+      gcal_calendar_id: true,
       meetings: {
         include: {
           exceptions: {
@@ -102,7 +103,8 @@ export async function getServerSideProps(context) {
     (meeting as any).nextMeeting = nextMeeting;
     (meeting as any).gcalEventLink = generateEventLink(
       meeting.gcal_event_id,
-      instance
+      instance,
+      project.gcal_calendar_id
     );
   }
 
