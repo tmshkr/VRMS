@@ -19,20 +19,20 @@ export function getNextOccurrence(
 
   const rule = rrulestr(meeting.rrule);
   const maxDate = new Date(8640000000000000);
-  const statusByInstance = {};
+  const exceptionByInstance = {};
 
   // Find the earliest upcoming exception that is CONFIRMED,
   // so that we can compare it to the nextInstance
   let earliestException = { start_time: maxDate, instance: maxDate };
-  for (const { status, instance, start_time } of meeting.exceptions) {
-    statusByInstance[instance.toISOString()] = status;
+  for (const e of meeting.exceptions) {
+    exceptionByInstance[e.instance.toISOString()] = e;
     if (
-      status === "CONFIRMED" &&
-      start_time &&
-      start < start_time &&
-      start_time < earliestException.start_time
+      e.status === "CONFIRMED" &&
+      e.start_time &&
+      start < e.start_time &&
+      e.start_time < earliestException.start_time
     ) {
-      earliestException = { start_time, instance };
+      earliestException = { start_time: e.start_time, instance: e.instance };
     }
   }
 
@@ -43,19 +43,25 @@ export function getNextOccurrence(
 
     // find the next instance that is not cancelled or tentative
     const key = date.toISOString();
-    if (!statusByInstance[key] || statusByInstance[key] === "CONFIRMED") {
+    if (
+      !exceptionByInstance[key] ||
+      exceptionByInstance[key].status === "CONFIRMED"
+    ) {
       found = true;
     }
 
     return true;
   });
 
-  const nextInstance = instances.pop();
+  const nextByRule = instances.pop();
+  if (!nextByRule) return { instance: undefined, startTime: undefined };
 
-  return nextInstance &&
-    nextInstance.valueOf() !== earliestException.instance.valueOf() &&
-    nextInstance < earliestException.start_time
-    ? { instance: nextInstance, startTime: nextInstance }
+  const nextInstance = exceptionByInstance[nextByRule.toISOString()]
+    ? exceptionByInstance[nextByRule.toISOString()].start_time
+    : nextByRule;
+
+  return nextInstance && nextInstance < earliestException.start_time
+    ? { instance: nextByRule, startTime: nextInstance }
     : earliestException.start_time < maxDate
     ? {
         instance: earliestException.instance,
