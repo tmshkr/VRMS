@@ -115,11 +115,10 @@ export default function ProfilePage(props) {
           <div>
             <h3>Projects</h3>
             <ul>
-              {projects.map((project) => {
-                const { id, name } = project;
+              {projects.map(({ slug, name }) => {
                 return (
-                  <li key={id}>
-                    <Link href={`/projects/${id}`}>{name}</Link>
+                  <li key={slug}>
+                    <Link href={`/projects/${slug}`}>{name}</Link>
                   </li>
                 );
               })}
@@ -128,11 +127,10 @@ export default function ProfilePage(props) {
           <div>
             <h3>Meetings</h3>
             <ul>
-              {meetings.map((meeting) => {
-                const { id, title } = meeting;
+              {meetings.map(({ slug, title }) => {
                 return (
-                  <li key={id}>
-                    <Link href={`/meetings/${id}`}>{title}</Link>
+                  <li key={slug}>
+                    <Link href={`/meetings/${slug}`}>{title}</Link>
                   </li>
                 );
               })}
@@ -195,23 +193,21 @@ export default function ProfilePage(props) {
 export async function getServerSideProps(context) {
   const { slug } = context.params;
 
-  const select = {
-    id: true,
-    first_name: true,
-    profile_image: true,
-    real_name: true,
-    username: true,
-    meeting_assignments: {
-      select: { meeting: { select: { id: true, title: true } } },
-    },
-    team_assignments: {
-      select: { project: { select: { id: true, name: true } } },
-    },
-  };
-
   const user = await prisma.user.findUnique({
     where: { username: slug },
-    select,
+    select: {
+      id: true,
+      first_name: true,
+      profile_image: true,
+      real_name: true,
+      username: true,
+      meeting_assignments: {
+        select: { meeting: { select: { slug: true, title: true } } },
+      },
+      team_assignments: {
+        select: { project: { select: { slug: true, name: true } } },
+      },
+    },
   });
 
   if (!user) {

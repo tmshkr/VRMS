@@ -91,6 +91,8 @@ model Project {
 
   created_at DateTime @default(now())
   updated_at DateTime @default(now()) @updatedAt
+
+  @@index(slug)
 }
 
 enum ProjectRole {
@@ -159,6 +161,7 @@ model Meeting {
   project         Project              @relation(fields: [project_id], references: [id])
 
   @@index(gcal_event_id)
+  @@index(slug)
 }
 
 model MeetingException {

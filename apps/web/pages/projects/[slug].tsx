@@ -21,8 +21,10 @@ const Projects: NextPage = (props: any) => {
       <ul>
         {project.team_members.map(({ member, position, role }) => {
           return (
-            <li key={member.id}>
-              <Link href={`/people/${member.id}`}>{member.real_name}</Link>
+            <li key={member.username}>
+              <Link href={`/people/${member.username}`}>
+                {member.real_name}
+              </Link>
             </li>
           );
         })}
@@ -31,8 +33,8 @@ const Projects: NextPage = (props: any) => {
       <ul>
         {project.meetings.map((meeting) => {
           return meeting.nextMeeting ? (
-            <li key={meeting.id} suppressHydrationWarning>
-              <Link href={`/meetings/${meeting.id}`}>{meeting.title}</Link>
+            <li key={meeting.slug} suppressHydrationWarning>
+              <Link href={`/meetings/${meeting.slug}`}>{meeting.title}</Link>
               <br />
               {dayjs(meeting.nextMeeting).format("MMM D, h:mm a")}
               <br />
@@ -57,23 +59,14 @@ const Projects: NextPage = (props: any) => {
 export default Projects;
 
 export async function getServerSideProps(context) {
-  const id = Number(context.params.id);
-
-  if (!id) {
-    return {
-      redirect: {
-        destination: "/projects",
-        permanent: false,
-      },
-    };
-  }
+  const { slug } = context.params;
 
   const project = await prisma.project.findUnique({
-    where: { id },
+    where: { slug },
     select: {
-      id: true,
       name: true,
       gcal_calendar_id: true,
+      slug: true,
       meetings: {
         include: {
           exceptions: {
@@ -85,7 +78,7 @@ export async function getServerSideProps(context) {
         select: {
           role: true,
           position: true,
-          member: { select: { id: true, real_name: true } },
+          member: { select: { real_name: true, username: true } },
         },
       },
     },

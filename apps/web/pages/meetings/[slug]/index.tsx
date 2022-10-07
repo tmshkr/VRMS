@@ -18,7 +18,7 @@ const Meeting: NextPage = (props: any) => {
       </Head>
       <h1>{meeting.title}</h1>
       <p>
-        <Link href={`/projects/${meeting.project.id}`}>
+        <Link href={`/projects/${meeting.project.slug}`}>
           {meeting.project.name}
         </Link>
       </p>
@@ -40,8 +40,8 @@ const Meeting: NextPage = (props: any) => {
       <h2>👥 Participants</h2>
       {meeting.participants.map(({ participant }) => {
         return (
-          <li key={participant.id}>
-            <Link href={`/people/${participant.id}`}>
+          <li key={participant.username}>
+            <Link href={`/people/${participant.username}`}>
               {participant.real_name}
             </Link>
           </li>
@@ -54,28 +54,22 @@ const Meeting: NextPage = (props: any) => {
 export default Meeting;
 
 export async function getServerSideProps(context) {
-  const id = Number(context.params.id);
-
-  if (!id) {
-    return {
-      notFound: true,
-    };
-  }
+  const { slug } = context.params;
 
   const meeting = await prisma.meeting.findUnique({
-    where: { id },
+    where: { slug },
     include: {
       exceptions: {
         orderBy: { start_time: "asc" },
       },
-      project: { select: { id: true, name: true, gcal_calendar_id: true } },
+      project: { select: { name: true, gcal_calendar_id: true, slug: true } },
       participants: {
         select: {
           participant: {
             select: {
-              id: true,
               real_name: true,
               slack_id: true,
+              username: true,
             },
           },
         },

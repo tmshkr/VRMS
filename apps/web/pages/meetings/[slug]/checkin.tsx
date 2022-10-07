@@ -22,17 +22,8 @@ const MeetingCheckinPage = (props: any) => {
 export default MeetingCheckinPage;
 
 export async function getServerSideProps(context) {
-  const { req, res, params } = context;
-  const id = BigInt(params.id);
-
-  if (!id) {
-    return {
-      redirect: {
-        destination: "/meetings",
-        permanent: false,
-      },
-    };
-  }
+  const { req, res } = context;
+  const { slug } = context.params;
 
   const nextToken: any = await getToken({ req });
   if (!nextToken) {
@@ -54,7 +45,7 @@ export async function getServerSideProps(context) {
   });
 
   const meeting = await prisma.meeting.findUnique({
-    where: { id },
+    where: { slug },
     include: {
       exceptions: {
         orderBy: { start_time: "asc" },
