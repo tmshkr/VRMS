@@ -33,12 +33,12 @@ export function registerJobs(agenda) {
   });
 
   agenda.define("renewGCalNotificationChannel", async (job) => {
-    const { calendarId } = job.attrs.data;
+    const { id, calendarId } = job.attrs.data;
     const mongoClient = await getMongoClient();
     await mongoClient
       .db()
       .collection("gcalNotificationChannels")
-      .deleteOne({ calendarId });
+      .deleteOne({ _id: id });
 
     const channel = await createNotificationChannel(calendarId);
     job.schedule(new Date(channel.expiration));

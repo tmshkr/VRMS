@@ -230,7 +230,7 @@ export async function createNotificationChannel(calendarId: string) {
     throw new Error("Must have write access");
   }
 
-  let { data: channel } = await calendar.events.watch({
+  const { data } = await calendar.events.watch({
     calendarId,
     requestBody: {
       id: require("crypto").randomUUID(),
@@ -239,12 +239,12 @@ export async function createNotificationChannel(calendarId: string) {
     },
   });
 
-  channel = {
-    ...channel,
-    expiration: Number(channel.expiration),
-    _id: channel.id,
-    calendarId,
+  const channel = {
+    ...data,
+    _id: data.id,
     address: webhookURL,
+    calendarId,
+    expiration: Number(data.expiration),
     createdAt: new Date(),
   };
 
@@ -258,7 +258,7 @@ export async function createNotificationChannel(calendarId: string) {
   agenda.schedule(
     new Date(channel.expiration),
     "renewGCalNotificationChannel",
-    { calendarId }
+    { calendarId, id: channel.id }
   );
 
   console.log("Google Calendar notification channel created");
