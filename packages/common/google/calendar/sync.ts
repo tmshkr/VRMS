@@ -12,6 +12,7 @@ export async function syncEvents(calendarId: string) {
     .findOne({ _id: calendarId });
 
   const { items, nextSyncToken } = await getEvents(calendarId, doc?.syncToken);
+  console.log(items);
 
   const events = {};
   const exceptions = {};
@@ -89,12 +90,15 @@ export async function createNotificationChannel(calendarId: string) {
 
 export async function stopNotificationChannel(id, resourceId) {
   const calendar = google.calendar({ version: "v3", auth: getAuth() });
-  await calendar.channels.stop({
-    requestBody: {
-      id,
-      resourceId,
-    },
-  });
+  await calendar.channels
+    .stop({
+      requestBody: {
+        id,
+        resourceId,
+      },
+    })
+    .catch(console.log);
+
   const mongoClient = await getMongoClient();
   await mongoClient
     .db()
@@ -114,7 +118,6 @@ export async function initSync(calendarId) {
     const channel = await createNotificationChannel(calendarId);
     const agenda = await getAgenda();
     agenda.schedule(channel.expiration, "renewGCalNotificationChannel", {
-      calendarId,
       id: channel.id,
     });
   }
