@@ -62,11 +62,14 @@ export async function handleExceptions(gcalEvents) {
 
 export async function handleCreateEvent(gcalEvents, gcalEventId) {
   const gcalEvent = gcalEvents[gcalEventId];
-  const event_id = BigInt(
-    gcalEvent.extendedProperties?.private?.meetbot_event_id
-  );
-
-  if (!event_id) return;
+  try {
+    var event_id = BigInt(
+      gcalEvent.extendedProperties?.private?.meetbot_event_id
+    );
+  } catch (err) {
+    console.log("Invalid event_id", gcalEvent.extendedProperties?.private);
+    return;
+  }
 
   const oldEvent = await prisma.event.findUnique({
     where: {
@@ -98,13 +101,13 @@ export async function handleCreateEvent(gcalEvents, gcalEventId) {
   const newEvent = await prisma.event.create({
     data: {
       created_by_id: oldEvent.created_by_id,
-      end_time: new Date(gcalEvent.end.dateTime),
+      end_time: new Date(gcalEvent.end.dateTime || gcalEvent.end.date),
       gcal_event_id: gcalEvent.id,
       project_id: oldEvent.project_id,
       slack_channel_id: oldEvent.slack_channel_id,
       slack_team_id: oldEvent.slack_team_id,
       rrule: generateRRuleFromEvent(gcalEvent),
-      start_time: new Date(gcalEvent.start.dateTime),
+      start_time: new Date(gcalEvent.start.dateTime || gcalEvent.start.date),
       title: gcalEvent.summary,
       description: gcalEvent.description,
       slug: getSlug(gcalEvent.summary),
@@ -139,9 +142,11 @@ export async function handleCreateEventException(gcalExceptions, gcalEventId) {
 
   const row = {
     event_id: record.id,
-    original_start_time: gcalEvent.originalStartTime.dateTime,
-    start_time: gcalEvent.start?.dateTime,
-    end_time: gcalEvent.end?.dateTime,
+    original_start_time:
+      gcalEvent.originalStartTime?.dateTime ||
+      gcalEvent.originalStartTime?.date,
+    start_time: gcalEvent.start?.dateTime || gcalEvent.start?.date,
+    end_time: gcalEvent.end?.dateTime || gcalEvent.end?.date,
     gcal_event_id: gcalEvent.id,
     title: gcalEvent.summary,
     description: gcalEvent.description,
