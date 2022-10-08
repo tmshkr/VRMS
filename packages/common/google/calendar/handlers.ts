@@ -1,53 +1,10 @@
 import prisma from "common/prisma";
-import { getMongoClient } from "common/mongo";
-import { getEvents, getAuth } from "./index";
-import dayjs from "common/dayjs";
-const { google } = require("googleapis");
-import { patchCalendarEvent } from "common/google";
-import { getAgenda } from "common/agenda";
+import { patchCalendarEvent } from "common/google/calendar";
 import { scheduleNextCheckin } from "common/events";
 import { getSlug } from "common/slug";
+import { createUpdate, generateRRuleFromEvent } from "./utils";
 
-export async function syncEvents(calendarId: string) {
-  const mongoClient = await getMongoClient();
-  const doc = await mongoClient
-    .db()
-    .collection("gcalSyncTokens")
-    .findOne({ _id: calendarId });
-
-  const { items, nextSyncToken } = await getEvents(calendarId, doc?.syncToken);
-
-  const events = {};
-  const exceptions = {};
-  for (const item of items) {
-    if (isException(item)) {
-      exceptions[item.id] = item;
-    } else {
-      events[item.id] = item;
-    }
-  }
-
-  await handleEvents(events);
-  await handleExceptions(exceptions);
-
-  await mongoClient
-    .db()
-    .collection("gcalSyncTokens")
-    .updateOne(
-      { _id: calendarId },
-      {
-        $set: { syncToken: nextSyncToken, updatedAt: new Date() },
-        $setOnInsert: { createdAt: new Date() },
-      },
-      { upsert: true }
-    );
-}
-
-function isException(event) {
-  return /_/.test(event.id);
-}
-
-async function handleEvents(gcalEvents) {
+export async function handleEvents(gcalEvents) {
   const gcalEventIds = Object.keys(gcalEvents);
   if (gcalEventIds.length === 0) return;
   const events = await prisma.event.findMany({
@@ -73,28 +30,7 @@ async function handleEvents(gcalEvents) {
   }
 }
 
-function generateRRuleFromEvent(gcalEvent) {
-  return gcalEvent.recurrence?.[0]
-    ? `DTSTART;TZID=${gcalEvent.start.timeZone}:${dayjs(
-        gcalEvent.start.dateTime
-      )
-        .tz(gcalEvent.start.timeZone)
-        .format("YYYYMMDDTHHmmss")}\n${gcalEvent.recurrence[0]}`
-    : undefined;
-}
-
-function createUpdate(gcalEvent) {
-  return {
-    status: gcalEvent.status.toUpperCase(),
-    start_time: gcalEvent.start?.dateTime,
-    end_time: gcalEvent.end?.dateTime,
-    rrule: generateRRuleFromEvent(gcalEvent),
-    title: gcalEvent.summary,
-    description: gcalEvent.description,
-  };
-}
-
-async function handleExceptions(gcalEvents) {
+export async function handleExceptions(gcalEvents) {
   const gcalEventIds = Object.keys(gcalEvents);
   if (gcalEventIds.length === 0) return;
   const eventExceptions = await prisma.eventException.findMany({
@@ -122,7 +58,7 @@ async function handleExceptions(gcalEvents) {
   }
 }
 
-async function handleCreateEvent(gcalEvents, gcalEventId) {
+export async function handleCreateEvent(gcalEvents, gcalEventId) {
   const gcalEvent = gcalEvents[gcalEventId];
   const event_id = BigInt(
     gcalEvent.extendedProperties?.private?.meetbot_event_id
@@ -186,7 +122,7 @@ async function handleCreateEvent(gcalEvents, gcalEventId) {
   scheduleNextCheckin(newEvent.id, newEvent.start_time);
 }
 
-async function handleCreateEventException(gcalExceptions, gcalEventId) {
+export async function handleCreateEventException(gcalExceptions, gcalEventId) {
   const gcalEvent = gcalExceptions[gcalEventId];
   const record = await prisma.event.findUnique({
     where: { gcal_event_id: gcalEvent.recurringEventId },
@@ -222,84 +158,4 @@ async function handleCreateEventException(gcalExceptions, gcalEventId) {
   });
 
   scheduleNextCheckin(record.id);
-}
-
-export async function createNotificationChannel(calendarId: string) {
-  const calendar = google.calendar({ version: "v3", auth: getAuth() });
-  const webhookURL = process.env.NGROK_URL // use ngrok in development
-    ? `${process.env.NGROK_URL}/api/google/calendar/watch`
-    : `${process.env.NEXTAUTH_URL}/api/google/calendar/watch`;
-
-  const { data: listData } = await await calendar.events.list({
-    calendarId,
-    maxResults: 1,
-  });
-
-  if (listData.accessRole !== "writer") {
-    throw new Error("Must have write access");
-  }
-
-  const { data } = await calendar.events.watch({
-    calendarId,
-    requestBody: {
-      id: require("crypto").randomUUID(),
-      type: "web_hook",
-      address: webhookURL,
-    },
-  });
-
-  const channel = {
-    ...data,
-    _id: data.id,
-    address: webhookURL,
-    calendarId,
-    expiration: Number(data.expiration),
-    createdAt: new Date(),
-  };
-
-  const mongoClient = await getMongoClient();
-  await mongoClient
-    .db()
-    .collection("gcalNotificationChannels")
-    .insertOne(channel);
-
-  const agenda = await getAgenda();
-  agenda.schedule(
-    new Date(channel.expiration),
-    "renewGCalNotificationChannel",
-    { calendarId, id: channel.id }
-  );
-
-  console.log("Google Calendar notification channel created");
-
-  return channel;
-}
-
-async function stopNotificationChannel(id, resourceId) {
-  const calendar = google.calendar({ version: "v3", auth: getAuth() });
-  await calendar.channels.stop({
-    requestBody: {
-      id,
-      resourceId,
-    },
-  });
-  const mongoClient = await getMongoClient();
-  await mongoClient
-    .db()
-    .collection("gcalNotificationChannels")
-    .deleteOne({ id, resourceId });
-  console.log("channel stopped", { id, resourceId });
-}
-
-export async function initSync(calendarId) {
-  const mongoClient = await getMongoClient();
-  const doc = await mongoClient
-    .db()
-    .collection("gcalNotificationChannels")
-    .findOne({ calendarId, expiration: { $gt: Date.now() } });
-
-  if (!doc) {
-    await createNotificationChannel(calendarId);
-  }
-  console.log("Google Calendar sync initialized");
 }

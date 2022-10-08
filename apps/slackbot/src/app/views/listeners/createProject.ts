@@ -2,7 +2,7 @@ import prisma from "common/prisma";
 import { getHomeTab } from "app/views/home";
 import { getInnerValues } from "utils/getInnerValues";
 import { getSlug } from "common/slug";
-import { initSync } from "common/google/sync";
+import { initSync } from "common/google/calendar/sync";
 
 export const createProject = async ({ ack, body, view, client, logger }) => {
   await ack();

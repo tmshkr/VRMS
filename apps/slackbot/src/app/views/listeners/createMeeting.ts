@@ -4,7 +4,10 @@ import { getPseudoUTC } from "common/rrule";
 import dayjs from "common/dayjs";
 import { getHomeTab } from "app/views/home";
 import { getInnerValues } from "utils/getInnerValues";
-import { createCalendarEvent, patchCalendarEvent } from "common/google";
+import {
+  createCalendarEvent,
+  patchCalendarEvent,
+} from "common/google/calendar";
 import { scheduleNextCheckin } from "common/events";
 import { getSlug } from "common/slug";
 

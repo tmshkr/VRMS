@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { syncEvents } from "common/google/sync";
+import { syncEvents } from "common/google/calendar/sync";
 import { getMongoClient } from "common/mongo";
 
 export default async function handler(

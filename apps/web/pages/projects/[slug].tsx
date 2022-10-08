@@ -4,7 +4,7 @@ import Link from "next/link";
 import prisma from "common/prisma";
 import dayjs from "common/dayjs";
 import { getNextOccurrence } from "common/events";
-import { generateEventLink } from "common/google";
+import { generateEventLink } from "common/google/calendar";
 
 const Projects: NextPage = (props: any) => {
   const { project } = props;

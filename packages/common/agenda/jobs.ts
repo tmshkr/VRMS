@@ -1,5 +1,5 @@
 import prisma from "common/prisma";
-import { createNotificationChannel } from "common/google/sync";
+import { createNotificationChannel } from "common/google/calendar/sync";
 import { sendMeetingCheckin } from "common/slack/notifications";
 import { getNextOccurrence } from "common/events";
 import { getMongoClient } from "common/mongo";

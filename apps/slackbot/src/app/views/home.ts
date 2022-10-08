@@ -1,6 +1,6 @@
 import prisma from "common/prisma";
 import dayjs from "common/dayjs";
-import { generateEventLink } from "common/google";
+import { generateEventLink } from "common/google/calendar";
 import { getNextOccurrence } from "common/events";
 import axios from "axios";
 
