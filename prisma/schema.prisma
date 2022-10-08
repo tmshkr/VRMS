@@ -135,21 +135,29 @@ enum EventStatus {
   CANCELLED
 }
 
+enum EventType {
+  MEETING
+}
+
 model Event {
   id BigInt @id @default(autoincrement())
 
   title            String
   description      String
-  start_time       DateTime
-  end_time         DateTime
+  start_time       DateTime?
+  start_date       String?
+  end_time         DateTime?
+  end_date         String?
   gcal_event_id    String      @unique
-  rrule            String?
+  recurrence       Json?
   project_id       BigInt
   created_by_id    BigInt
   slack_channel_id String
   slack_team_id    String
   slug             String      @unique
   status           EventStatus @default(CONFIRMED)
+  timezone         String
+  type             EventType   @default(MEETING)
   visibility       Visibility  @default(PUBLIC)
 
   created_at DateTime @default(now())
@@ -170,7 +178,9 @@ model EventException {
   original_start_time DateTime
 
   start_time    DateTime?
+  start_date    String?
   end_time      DateTime?
+  end_date      String?
   gcal_event_id String      @unique
   description   String?
   title         String?

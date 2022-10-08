@@ -2,6 +2,7 @@ import { rrulestr } from "rrule";
 import { Event, EventException } from "@prisma/client";
 import { getAgenda } from "common/agenda";
 import prisma from "common/prisma";
+import dayjs from "dayjs";
 
 /*
   Returns the next instance and startTime of an event,
@@ -11,8 +12,8 @@ export function getNextOccurrence(
   event: Event & { exceptions: EventException[] },
   start = new Date()
 ): { originalStartTime: Date | undefined; startTime: Date | undefined } {
-  if (!event.rrule) {
-    return start < event.start_time
+  if (!event.recurrence) {
+    return event.start_time && start < event.start_time
       ? {
           originalStartTime: event.start_time,
           startTime: event.start_time,
@@ -20,7 +21,11 @@ export function getNextOccurrence(
       : { originalStartTime: undefined, startTime: undefined };
   }
 
-  const rule = rrulestr(event.rrule);
+  const rule = rrulestr(
+    `DTSTART;TZID=${event.timezone}:${dayjs(event.start_time)
+      .tz(event.timezone)
+      .format("YYYYMMDDTHHmmss")}\n${event.recurrence[0]}`
+  );
   const maxDate = new Date(8640000000000000);
   const exceptionByInstance = {};
 

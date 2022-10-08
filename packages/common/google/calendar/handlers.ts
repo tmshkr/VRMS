@@ -2,7 +2,7 @@ import prisma from "common/prisma";
 import { patchCalendarEvent } from "common/google/calendar";
 import { scheduleNextCheckin } from "common/events";
 import { getSlug } from "common/slug";
-import { createUpdate, generateRRuleFromEvent } from "./utils";
+import { Prisma } from "@prisma/client";
 
 export async function handleEvents(gcalEvents) {
   const gcalEventIds = Object.keys(gcalEvents);
@@ -11,7 +11,7 @@ export async function handleEvents(gcalEvents) {
     where: { gcal_event_id: { in: gcalEventIds } },
   });
 
-  // create a new Meeting if it wasn't found in the database
+  // create a new Event if it wasn't found in the database
   const toCreate = new Set(gcalEventIds);
   for (const record of events) {
     toCreate.delete(record.gcal_event_id);
@@ -25,7 +25,7 @@ export async function handleEvents(gcalEvents) {
     const gcalEvent = gcalEvents[record.gcal_event_id];
     await prisma.event.update({
       where: { gcal_event_id: gcalEvent.id },
-      data: createUpdate(gcalEvent),
+      data: createEventUpdate(gcalEvent),
     });
 
     scheduleNextCheckin(record.id);
@@ -46,14 +46,14 @@ export async function handleExceptions(gcalEvents) {
   }
 
   toCreate.forEach(
-    async (eventId) => await handleCreateEventException(gcalEvents, eventId)
+    async (eventId) => await handleCreateException(gcalEvents, eventId)
   );
 
   for (const record of eventExceptions) {
     const gcalEvent = gcalEvents[record.gcal_event_id];
     await prisma.eventException.update({
       where: { gcal_event_id: gcalEvent.id },
-      data: createUpdate(gcalEvent),
+      data: createExceptionUpdate(gcalEvent),
     });
 
     scheduleNextCheckin(record.event_id);
@@ -101,14 +101,17 @@ export async function handleCreateEvent(gcalEvents, gcalEventId) {
   const newEvent = await prisma.event.create({
     data: {
       created_by_id: oldEvent.created_by_id,
-      end_time: new Date(gcalEvent.end.dateTime || gcalEvent.end.date),
+      end_time: new Date(gcalEvent.end.dateTime),
+      end_date: gcalEvent.end.date,
       gcal_event_id: gcalEvent.id,
       project_id: oldEvent.project_id,
       slack_channel_id: oldEvent.slack_channel_id,
       slack_team_id: oldEvent.slack_team_id,
-      rrule: generateRRuleFromEvent(gcalEvent),
-      start_time: new Date(gcalEvent.start.dateTime || gcalEvent.start.date),
+      recurrence: gcalEvent.recurrence,
+      start_time: new Date(gcalEvent.start.dateTime),
+      start_date: gcalEvent.start.date,
       title: gcalEvent.summary,
+      timezone: gcalEvent.start.timeZone,
       description: gcalEvent.description,
       slug: getSlug(gcalEvent.summary),
       participants: { create: oldEvent.participants },
@@ -124,10 +127,12 @@ export async function handleCreateEvent(gcalEvents, gcalEventId) {
     },
   });
 
-  scheduleNextCheckin(newEvent.id, newEvent.start_time);
+  if (newEvent.start_time) {
+    scheduleNextCheckin(newEvent.id, newEvent.start_time);
+  }
 }
 
-export async function handleCreateEventException(gcalExceptions, gcalEventId) {
+export async function handleCreateException(gcalExceptions, gcalEventId) {
   const gcalEvent = gcalExceptions[gcalEventId];
   const record = await prisma.event.findUnique({
     where: { gcal_event_id: gcalEvent.recurringEventId },
@@ -145,8 +150,10 @@ export async function handleCreateEventException(gcalExceptions, gcalEventId) {
     original_start_time:
       gcalEvent.originalStartTime?.dateTime ||
       gcalEvent.originalStartTime?.date,
-    start_time: gcalEvent.start?.dateTime || gcalEvent.start?.date,
-    end_time: gcalEvent.end?.dateTime || gcalEvent.end?.date,
+    start_time: gcalEvent.start?.dateTime || null,
+    start_date: gcalEvent.start?.date || null,
+    end_time: gcalEvent.end?.dateTime || null,
+    end_date: gcalEvent.end?.date || null,
     gcal_event_id: gcalEvent.id,
     title: gcalEvent.summary,
     description: gcalEvent.description,
@@ -165,4 +172,29 @@ export async function handleCreateEventException(gcalExceptions, gcalEventId) {
   });
 
   scheduleNextCheckin(record.id);
+}
+
+function createEventUpdate(gcalEvent) {
+  return {
+    status: gcalEvent.status.toUpperCase(),
+    start_time: gcalEvent.start?.dateTime || null,
+    start_date: gcalEvent.start?.date || null,
+    end_time: gcalEvent.end?.dateTime || null,
+    end_date: gcalEvent.end?.date || null,
+    recurrence: gcalEvent.recurrence || null,
+    title: gcalEvent.summary,
+    description: gcalEvent.description,
+  };
+}
+
+function createExceptionUpdate(gcalEvent) {
+  return {
+    status: gcalEvent.status.toUpperCase(),
+    start_time: gcalEvent.start?.dateTime || null,
+    start_date: gcalEvent.start?.date || null,
+    end_time: gcalEvent.end?.dateTime || null,
+    end_date: gcalEvent.end?.date || null,
+    title: gcalEvent.summary,
+    description: gcalEvent.description,
+  };
 }

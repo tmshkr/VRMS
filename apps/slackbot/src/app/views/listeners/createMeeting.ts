@@ -68,6 +68,8 @@ export const createMeeting = async ({ ack, body, view, client, logger }) => {
       break;
   }
 
+  const recurrence = rule ? [rule?.toString().split("\n")[1]] : undefined;
+
   const participants = await prisma.user.findMany({
     where: {
       slack_id: {
@@ -92,7 +94,7 @@ export const createMeeting = async ({ ack, body, view, client, logger }) => {
         ),
         timeZone: meetingCreator.timezone,
       },
-      recurrence: [rule?.toString().split("\n")[1]],
+      recurrence,
     },
     gcal_calendar_id
   );
@@ -105,13 +107,14 @@ export const createMeeting = async ({ ack, body, view, client, logger }) => {
         .toDate(),
       gcal_event_id: gcalEvent.id,
       project_id: BigInt(meeting_project.selected_option.value),
-      rrule: rule?.toString(),
+      recurrence,
       slack_channel_id: meeting_channel.selected_channel,
       slack_team_id: body.user.team_id,
       start_time: start_time.toDate(),
       title: meeting_title.value,
       description: meeting_description.value,
       slug: getSlug(meeting_title.value),
+      timezone: meetingCreator.timezone,
       participants: {
         create: participants.map(({ id }) => ({
           user_id: id,
@@ -131,7 +134,7 @@ export const createMeeting = async ({ ack, body, view, client, logger }) => {
     },
   });
 
-  scheduleNextCheckin(newMeeting.id, newMeeting.start_time);
+  scheduleNextCheckin(newMeeting.id, start_time.toDate());
 
   for (const { slack_id } of participants) {
     await client.chat.postMessage({
