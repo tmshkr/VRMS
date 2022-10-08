@@ -94,7 +94,7 @@ export async function createNotificationChannel(calendarId: string) {
   return channel;
 }
 
-async function stopNotificationChannel(id, resourceId) {
+export async function stopNotificationChannel(id, resourceId) {
   const calendar = google.calendar({ version: "v3", auth: getAuth() });
   await calendar.channels.stop({
     requestBody: {
