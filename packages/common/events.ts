@@ -1,38 +1,44 @@
 import { rrulestr } from "rrule";
-import { Meeting, MeetingException } from "@prisma/client";
+import { Event, EventException } from "@prisma/client";
 import { getAgenda } from "common/agenda";
 import prisma from "common/prisma";
 
 /*
-  Returns the next instance and startTime of a meeting,
+  Returns the next instance and startTime of an event,
   or undefined if there are no more occurrences.
 */
 export function getNextOccurrence(
-  meeting: Meeting & { exceptions: MeetingException[] },
+  event: Event & { exceptions: EventException[] },
   start = new Date()
-): { instance: Date | undefined; startTime: Date | undefined } {
-  if (!meeting.rrule) {
-    return start < meeting.start_time
-      ? { instance: meeting.start_time, startTime: meeting.start_time }
-      : { instance: undefined, startTime: undefined };
+): { originalStartTime: Date | undefined; startTime: Date | undefined } {
+  if (!event.rrule) {
+    return start < event.start_time
+      ? {
+          originalStartTime: event.start_time,
+          startTime: event.start_time,
+        }
+      : { originalStartTime: undefined, startTime: undefined };
   }
 
-  const rule = rrulestr(meeting.rrule);
+  const rule = rrulestr(event.rrule);
   const maxDate = new Date(8640000000000000);
   const exceptionByInstance = {};
 
   // Find the earliest upcoming exception that is CONFIRMED,
   // so that we can compare it to the nextInstance
-  let earliestException = { start_time: maxDate, instance: maxDate };
-  for (const e of meeting.exceptions) {
-    exceptionByInstance[e.instance.toISOString()] = e;
+  let earliestException = { startTime: maxDate, originalStartTime: maxDate };
+  for (const e of event.exceptions) {
+    exceptionByInstance[e.original_start_time.toISOString()] = e;
     if (
       e.status === "CONFIRMED" &&
       e.start_time &&
       start < e.start_time &&
-      e.start_time < earliestException.start_time
+      e.start_time < earliestException.startTime
     ) {
-      earliestException = { start_time: e.start_time, instance: e.instance };
+      earliestException = {
+        startTime: e.start_time,
+        originalStartTime: e.original_start_time,
+      };
     }
   }
 
@@ -54,42 +60,43 @@ export function getNextOccurrence(
   });
 
   const nextByRule = instances.pop();
-  if (!nextByRule) return { instance: undefined, startTime: undefined };
+  if (!nextByRule)
+    return { originalStartTime: undefined, startTime: undefined };
 
   const nextInstance = exceptionByInstance[nextByRule.toISOString()]
     ? exceptionByInstance[nextByRule.toISOString()].start_time
     : nextByRule;
 
-  return nextInstance && nextInstance < earliestException.start_time
-    ? { instance: nextByRule, startTime: nextInstance }
-    : earliestException.start_time < maxDate
+  return nextInstance && nextInstance < earliestException.startTime
+    ? { originalStartTime: nextByRule, startTime: nextInstance }
+    : earliestException.startTime < maxDate
     ? {
-        instance: earliestException.instance,
-        startTime: earliestException.start_time,
+        originalStartTime: earliestException.originalStartTime,
+        startTime: earliestException.startTime,
       }
-    : { instance: undefined, startTime: undefined };
+    : { originalStartTime: undefined, startTime: undefined };
 }
 
 export async function scheduleNextCheckin(
-  meeting_id: bigint,
+  event_id: bigint,
   sendAt?: Date // provide the Date if known
 ) {
   let nextRunAt;
   if (sendAt) {
     nextRunAt = sendAt;
   } else {
-    const meeting = await prisma.meeting.findUniqueOrThrow({
-      where: { id: meeting_id },
+    const event = await prisma.event.findUniqueOrThrow({
+      where: { id: event_id },
       include: { exceptions: true },
     });
-    nextRunAt = getNextOccurrence(meeting).startTime;
+    nextRunAt = getNextOccurrence(event).startTime;
   }
 
   const agenda = await getAgenda();
   const [job] = await agenda.jobs(
     {
       name: "sendMeetingCheckin",
-      data: { meeting_id: meeting_id.toString() },
+      data: { event_id: event_id.toString() },
     },
     undefined,
     1
@@ -102,7 +109,7 @@ export async function scheduleNextCheckin(
       console.log(`Updated job to run at ${nextRunAt}`);
     } else {
       await agenda.schedule(nextRunAt, "sendMeetingCheckin", {
-        meeting_id: meeting_id.toString(),
+        event_id: event_id.toString(),
       });
       console.log(`Scheduled job to run at ${nextRunAt}`);
     }

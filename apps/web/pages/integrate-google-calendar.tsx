@@ -15,12 +15,12 @@ const CalendarGuidePage = () => {
           Calendar in order for it to sync your meetings properly.
         </p>
         <p>
-          You can allow this on a per-calendar basis by going into the Google
-          Calendar's settings and adding&nbsp;
+          You can allow this on a per-calendar basis by going into your Google
+          Calendar's <b>Share with specific people</b> settings and adding&nbsp;
           <a href="mailto:calendar@meetbot-hq.iam.gserviceaccount.com">
             calendar@meetbot-hq.iam.gserviceaccount.com
-          </a>
-          &nbsp;as a <b>Make changes to events</b> user.
+          </a>{" "}
+          with <b>Make changes to events</b> permissions.
         </p>
         <p>
           You'll also need your Google Calendar's ID, which can be found under

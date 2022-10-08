@@ -5,7 +5,7 @@ import dayjs from "common/dayjs";
 import { getHomeTab } from "app/views/home";
 import { getInnerValues } from "utils/getInnerValues";
 import { createCalendarEvent, patchCalendarEvent } from "common/google";
-import { scheduleNextCheckin } from "common/meetings";
+import { scheduleNextCheckin } from "common/events";
 import { getSlug } from "common/slug";
 
 export const createMeeting = async ({ ack, body, view, client, logger }) => {
@@ -94,7 +94,7 @@ export const createMeeting = async ({ ack, body, view, client, logger }) => {
     gcal_calendar_id
   );
 
-  const newMeeting = await prisma.meeting.create({
+  const newMeeting = await prisma.event.create({
     data: {
       created_by_id: meetingCreator.id,
       end_time: start_time
@@ -113,7 +113,7 @@ export const createMeeting = async ({ ack, body, view, client, logger }) => {
         create: participants.map(({ id }) => ({
           user_id: id,
           added_by_id: meetingCreator.id,
-          meeting_time: new Date(0),
+          event_time: new Date(0),
         })),
       },
     },
@@ -122,8 +122,8 @@ export const createMeeting = async ({ ack, body, view, client, logger }) => {
   await patchCalendarEvent(gcalEvent.id, gcal_calendar_id, {
     extendedProperties: {
       private: {
-        mb_meeting_id: newMeeting.id.toString(),
-        mb_project_id: newMeeting.project_id.toString(),
+        meetbot_event_id: newMeeting.id.toString(),
+        meetbot_project_id: newMeeting.project_id.toString(),
       },
     },
   });

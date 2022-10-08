@@ -1,11 +1,11 @@
 import prisma from "common/prisma";
 import dayjs from "common/dayjs";
 import { generateEventLink } from "common/google";
-import { getNextOccurrence } from "common/meetings";
+import { getNextOccurrence } from "common/events";
 import axios from "axios";
 
 export const getHomeTab = async (slack_id: string, slack_team_id: string) => {
-  const { team_assignments, meeting_assignments, timezone } =
+  const { team_assignments, event_assignments, timezone } =
     await prisma.user.findUniqueOrThrow({
       where: { slack_id_slack_team_id: { slack_id, slack_team_id } },
       include: {
@@ -13,11 +13,11 @@ export const getHomeTab = async (slack_id: string, slack_team_id: string) => {
           orderBy: { created_at: "asc" },
           select: { project: true },
         },
-        meeting_assignments: {
-          where: { meeting: { status: "CONFIRMED" } },
-          orderBy: { meeting: { start_time: "asc" } },
+        event_assignments: {
+          where: { event: { status: "CONFIRMED" } },
+          orderBy: { event: { start_time: "asc" } },
           select: {
-            meeting: {
+            event: {
               include: {
                 exceptions: true,
                 project: {
@@ -119,8 +119,8 @@ export const getHomeTab = async (slack_id: string, slack_team_id: string) => {
             action_id: "create_new_meeting",
           },
         },
-        ...meeting_assignments
-          .map(({ meeting }) => renderMeeting(meeting, timezone))
+        ...event_assignments
+          .map(({ event }) => renderMeeting(event, timezone))
           .filter((block) => !!block)
           .sort((a: any, b: any) => {
             const { date: aDate } = JSON.parse(a.block_id);
@@ -152,21 +152,22 @@ function renderProject(project) {
   };
 }
 
-function renderMeeting(meeting, userTimezone) {
-  const { startTime: nextMeeting, instance } = getNextOccurrence(meeting);
+function renderMeeting(event, userTimezone) {
+  const { startTime: nextMeeting, originalStartTime } =
+    getNextOccurrence(event);
 
   return nextMeeting
     ? {
-        block_id: JSON.stringify({ meeting_id: meeting.id, date: nextMeeting }),
+        block_id: JSON.stringify({ event_id: event.id, date: nextMeeting }),
         type: "section",
         text: {
           type: "mrkdwn",
-          text: `:small_blue_diamond: *${meeting.title}* – ${dayjs(nextMeeting)
+          text: `:small_blue_diamond: *${event.title}* – ${dayjs(nextMeeting)
             .tz(userTimezone)
             .format("dddd, MMMM D, h:mm a")} – <${generateEventLink(
-            meeting.gcal_event_id,
-            instance,
-            meeting.project.gcal_calendar_id
+            event.gcal_event_id,
+            originalStartTime,
+            event.project.gcal_calendar_id
           )}|Add to Calendar>`,
         },
       }

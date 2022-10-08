@@ -2,7 +2,7 @@ import { App } from "@slack/bolt";
 import { getMongoClient } from "common/mongo";
 
 export const sendMeetingCheckin = async ({
-  id,
+  slug,
   slack_channel_id,
   slack_team_id,
 }) => {
@@ -39,7 +39,7 @@ export const sendMeetingCheckin = async ({
             text: "Check In",
           },
           action_id: "meeting_check_in",
-          url: `${process.env.NEXTAUTH_URL}/meetings/${id}/checkin`,
+          url: `${process.env.NEXTAUTH_URL}/meetings/${slug}/checkin`,
         },
       },
     ],

@@ -39,16 +39,16 @@ export async function patchCalendarEvent(
 
 export function generateEventLink(
   gcalEventId: string,
-  eventInstance: Date | undefined,
+  originalStartTime: Date | undefined,
   calendarId: string
 ) {
-  if (!eventInstance) return;
+  if (!originalStartTime) return;
 
   const gcalEventLink = new URL("https://www.google.com/calendar/event");
   gcalEventLink.searchParams.set(
     "eid",
     Buffer.from(
-      `${gcalEventId}_${dayjs(eventInstance)
+      `${gcalEventId}_${dayjs(originalStartTime)
         .utc()
         .format("YYYYMMDDTHHmmss[Z]")} ${calendarId}`
     )

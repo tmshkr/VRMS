@@ -5,10 +5,10 @@ import dayjs from "common/dayjs";
 const { google } = require("googleapis");
 import { patchCalendarEvent } from "common/google";
 import { getAgenda } from "common/agenda";
-import { scheduleNextCheckin } from "common/meetings";
+import { scheduleNextCheckin } from "common/events";
 import { getSlug } from "common/slug";
 
-export async function syncMeetings(calendarId: string) {
+export async function syncEvents(calendarId: string) {
   const mongoClient = await getMongoClient();
   const doc = await mongoClient
     .db()
@@ -47,92 +47,99 @@ function isException(event) {
   return /_/.test(event.id);
 }
 
-async function handleEvents(events) {
-  const eventIds = Object.keys(events);
-  if (eventIds.length === 0) return;
-  const meetings = await prisma.meeting.findMany({
-    where: { gcal_event_id: { in: eventIds } },
+async function handleEvents(gcalEvents) {
+  const gcalEventIds = Object.keys(gcalEvents);
+  if (gcalEventIds.length === 0) return;
+  const events = await prisma.event.findMany({
+    where: { gcal_event_id: { in: gcalEventIds } },
   });
 
   // create a new Meeting if it wasn't found in the database
-  const toCreate = new Set(eventIds);
-  for (const record of meetings) {
+  const toCreate = new Set(gcalEventIds);
+  for (const record of events) {
     toCreate.delete(record.gcal_event_id);
   }
 
-  toCreate.forEach((eventId) => handleCreateMeeting(events, eventId));
+  toCreate.forEach((eventId) => handleCreateEvent(gcalEvents, eventId));
 
-  for (const record of meetings) {
-    const event = events[record.gcal_event_id];
-    await prisma.meeting.update({
-      where: { gcal_event_id: event.id },
-      data: createUpdate(event),
+  for (const record of events) {
+    const gcalEvent = gcalEvents[record.gcal_event_id];
+    await prisma.event.update({
+      where: { gcal_event_id: gcalEvent.id },
+      data: createUpdate(gcalEvent),
     });
 
     scheduleNextCheckin(record.id);
   }
 }
 
-function generateRRuleFromEvent(event) {
-  return event.recurrence?.[0]
-    ? `DTSTART;TZID=${event.start.timeZone}:${dayjs(event.start.dateTime)
-        .tz(event.start.timeZone)
-        .format("YYYYMMDDTHHmmss")}\n${event.recurrence[0]}`
+function generateRRuleFromEvent(gcalEvent) {
+  return gcalEvent.recurrence?.[0]
+    ? `DTSTART;TZID=${gcalEvent.start.timeZone}:${dayjs(
+        gcalEvent.start.dateTime
+      )
+        .tz(gcalEvent.start.timeZone)
+        .format("YYYYMMDDTHHmmss")}\n${gcalEvent.recurrence[0]}`
     : undefined;
 }
 
-function createUpdate(event) {
+function createUpdate(gcalEvent) {
   return {
-    status: event.status.toUpperCase(),
-    start_time: event.start?.dateTime,
-    end_time: event.end?.dateTime,
-    rrule: generateRRuleFromEvent(event),
-    title: event.summary,
-    description: event.description,
+    status: gcalEvent.status.toUpperCase(),
+    start_time: gcalEvent.start?.dateTime,
+    end_time: gcalEvent.end?.dateTime,
+    rrule: generateRRuleFromEvent(gcalEvent),
+    title: gcalEvent.summary,
+    description: gcalEvent.description,
   };
 }
 
-async function handleExceptions(events) {
-  const eventIds = Object.keys(events);
-  if (eventIds.length === 0) return;
-  const meetingExceptions = await prisma.meetingException.findMany({
-    where: { gcal_event_id: { in: eventIds } },
+async function handleExceptions(gcalEvents) {
+  const gcalEventIds = Object.keys(gcalEvents);
+  if (gcalEventIds.length === 0) return;
+  const eventExceptions = await prisma.eventException.findMany({
+    where: { gcal_event_id: { in: gcalEventIds } },
   });
 
-  // create a new MeetingException if it wasn't found in the database
-  const toCreate = new Set(eventIds);
-  for (const record of meetingExceptions) {
+  // create a new EventException if it wasn't found in the database
+  const toCreate = new Set(gcalEventIds);
+  for (const record of eventExceptions) {
     toCreate.delete(record.gcal_event_id);
   }
 
-  toCreate.forEach((eventId) => handleCreateMeetingException(events, eventId));
+  toCreate.forEach((eventId) =>
+    handleCreateEventException(gcalEvents, eventId)
+  );
 
-  for (const record of meetingExceptions) {
-    const event = events[record.gcal_event_id];
-    await prisma.meetingException.update({
-      where: { gcal_event_id: event.id },
-      data: createUpdate(event),
+  for (const record of eventExceptions) {
+    const gcalEvent = gcalEvents[record.gcal_event_id];
+    await prisma.eventException.update({
+      where: { gcal_event_id: gcalEvent.id },
+      data: createUpdate(gcalEvent),
     });
 
-    scheduleNextCheckin(record.meeting_id);
+    scheduleNextCheckin(record.event_id);
   }
 }
 
-async function handleCreateMeeting(events, eventId) {
-  const event = events[eventId];
-  const meeting_id = parseInt(event.extendedProperties?.private?.mb_meeting_id);
-  if (!meeting_id) return;
+async function handleCreateEvent(gcalEvents, gcalEventId) {
+  const gcalEvent = gcalEvents[gcalEventId];
+  const event_id = BigInt(
+    gcalEvent.extendedProperties?.private?.meetbot_event_id
+  );
 
-  const oldMeeting = await prisma.meeting.findUnique({
+  if (!event_id) return;
+
+  const oldEvent = await prisma.event.findUnique({
     where: {
-      id: meeting_id,
+      id: event_id,
     },
     include: {
       participants: {
-        where: { meeting_time: new Date(0) },
+        where: { event_time: new Date(0) },
         select: {
           user_id: true,
-          meeting_time: true,
+          event_time: true,
           added_by_id: true,
           is_active: true,
         },
@@ -145,74 +152,76 @@ async function handleCreateMeeting(events, eventId) {
     },
   });
 
-  if (!oldMeeting) {
-    console.log("meeting not found", { meeting_id });
+  if (!oldEvent) {
+    console.log("event not found", { event_id });
     return;
   }
 
-  const newMeeting = await prisma.meeting.create({
+  const newEvent = await prisma.event.create({
     data: {
-      created_by_id: oldMeeting.created_by_id,
-      end_time: new Date(event.end.dateTime),
-      gcal_event_id: event.id,
-      project_id: oldMeeting.project_id,
-      slack_channel_id: oldMeeting.slack_channel_id,
-      slack_team_id: oldMeeting.slack_team_id,
-      rrule: generateRRuleFromEvent(event),
-      start_time: new Date(event.start.dateTime),
-      title: event.summary,
-      description: event.description,
-      slug: getSlug(event.summary),
-      participants: { create: oldMeeting.participants },
+      created_by_id: oldEvent.created_by_id,
+      end_time: new Date(gcalEvent.end.dateTime),
+      gcal_event_id: gcalEvent.id,
+      project_id: oldEvent.project_id,
+      slack_channel_id: oldEvent.slack_channel_id,
+      slack_team_id: oldEvent.slack_team_id,
+      rrule: generateRRuleFromEvent(gcalEvent),
+      start_time: new Date(gcalEvent.start.dateTime),
+      title: gcalEvent.summary,
+      description: gcalEvent.description,
+      slug: getSlug(gcalEvent.summary),
+      participants: { create: oldEvent.participants },
     },
   });
 
-  await patchCalendarEvent(event.id, oldMeeting.project.gcal_calendar_id, {
+  await patchCalendarEvent(gcalEvent.id, oldEvent.project.gcal_calendar_id, {
     extendedProperties: {
       private: {
-        mb_meeting_id: newMeeting.id.toString(),
-        mb_project_id: newMeeting.project_id.toString(),
+        meetbot_event_id: newEvent.id.toString(),
+        meetbot_project_id: newEvent.project_id.toString(),
       },
     },
   });
 
-  scheduleNextCheckin(newMeeting.id, newMeeting.start_time);
+  scheduleNextCheckin(newEvent.id, newEvent.start_time);
 }
 
-async function handleCreateMeetingException(exceptions, eventId) {
-  const event = exceptions[eventId];
-  const meeting = await prisma.meeting.findUnique({
-    where: { gcal_event_id: event.recurringEventId },
+async function handleCreateEventException(gcalExceptions, gcalEventId) {
+  const gcalEvent = gcalExceptions[gcalEventId];
+  const record = await prisma.event.findUnique({
+    where: { gcal_event_id: gcalEvent.recurringEventId },
   });
 
-  if (!meeting) {
-    console.log("meeting not found", { gcal_event_id: event.recurringEventId });
+  if (!record) {
+    console.log("event not found", {
+      gcal_event_id: gcalEvent.recurringEventId,
+    });
     return;
   }
 
   const row = {
-    meeting_id: meeting.id,
-    instance: event.originalStartTime.dateTime,
-    start_time: event.start?.dateTime,
-    end_time: event.end?.dateTime,
-    gcal_event_id: event.id,
-    title: event.summary,
-    description: event.description,
-    status: event.status.toUpperCase(),
+    event_id: record.id,
+    original_start_time: gcalEvent.originalStartTime.dateTime,
+    start_time: gcalEvent.start?.dateTime,
+    end_time: gcalEvent.end?.dateTime,
+    gcal_event_id: gcalEvent.id,
+    title: gcalEvent.summary,
+    description: gcalEvent.description,
+    status: gcalEvent.status.toUpperCase(),
   };
 
-  await prisma.meetingException.upsert({
+  await prisma.eventException.upsert({
     where: {
-      meeting_id_instance: {
-        meeting_id: meeting.id,
-        instance: new Date(event.originalStartTime.dateTime),
+      event_id_original_start_time: {
+        event_id: record.id,
+        original_start_time: new Date(gcalEvent.originalStartTime.dateTime),
       },
     },
     create: row,
     update: row,
   });
 
-  scheduleNextCheckin(meeting.id);
+  scheduleNextCheckin(record.id);
 }
 
 export async function createNotificationChannel(calendarId: string) {

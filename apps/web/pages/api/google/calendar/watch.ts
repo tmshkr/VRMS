@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { syncMeetings } from "common/google/sync";
+import { syncEvents } from "common/google/sync";
 import { getMongoClient } from "common/mongo";
 
 export default async function handler(
@@ -19,5 +19,5 @@ export default async function handler(
   }
 
   res.status(200).send("OK");
-  syncMeetings(doc.calendarId);
+  syncEvents(doc.calendarId);
 }

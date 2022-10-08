@@ -72,7 +72,7 @@ export default function ProfilePage(props) {
   return (
     <div className="sm:flex">
       <Head>
-        <title>{profile.real_name} | VRMS</title>
+        <title>{profile.real_name} | Meetbot</title>
       </Head>
       <div>
         <img
@@ -201,8 +201,8 @@ export async function getServerSideProps(context) {
       profile_image: true,
       real_name: true,
       username: true,
-      meeting_assignments: {
-        select: { meeting: { select: { slug: true, title: true } } },
+      event_assignments: {
+        select: { event: { select: { slug: true, title: true } } },
       },
       team_assignments: {
         select: { project: { select: { slug: true, name: true } } },
@@ -225,7 +225,7 @@ export async function getServerSideProps(context) {
     profile_image,
     real_name,
     username,
-    meeting_assignments,
+    event_assignments,
     team_assignments,
   } = user;
 
@@ -246,7 +246,7 @@ export async function getServerSideProps(context) {
         real_name,
         username,
       },
-      meetings: meeting_assignments.map(({ meeting }) => meeting),
+      meetings: event_assignments.map(({ event }) => event),
       projects: team_assignments.map(({ project }) => project),
     },
   };

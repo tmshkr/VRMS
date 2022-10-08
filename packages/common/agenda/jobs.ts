@@ -1,14 +1,14 @@
 import prisma from "common/prisma";
 import { createNotificationChannel } from "common/google/sync";
 import { sendMeetingCheckin } from "common/slack/notifications";
-import { getNextOccurrence } from "common/meetings";
+import { getNextOccurrence } from "common/events";
 import { getMongoClient } from "common/mongo";
 
 export function registerJobs(agenda) {
   agenda.define("sendMeetingCheckin", async (job) => {
-    const { meeting_id } = job.attrs.data;
-    const meeting = await prisma.meeting.findUnique({
-      where: { id: BigInt(meeting_id) },
+    const { event_id } = job.attrs.data;
+    const event = await prisma.event.findUnique({
+      where: { id: BigInt(event_id) },
       include: {
         exceptions: {
           orderBy: { start_time: "asc" },
@@ -16,14 +16,14 @@ export function registerJobs(agenda) {
       },
     });
 
-    if (!meeting) {
-      console.log("meeting not found", { meeting_id });
+    if (!event) {
+      console.log("event not found", { event_id });
       return;
     }
 
-    sendMeetingCheckin(meeting);
+    sendMeetingCheckin(event);
 
-    const { startTime: nextRunAt } = getNextOccurrence(meeting);
+    const { startTime: nextRunAt } = getNextOccurrence(event);
     if (nextRunAt) {
       job.schedule(nextRunAt);
       job.save();
