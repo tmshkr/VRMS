@@ -72,7 +72,7 @@ export async function createNotificationChannel(calendarId: string) {
     _id: data.id,
     address: webhookURL,
     calendarId,
-    expiration: Number(data.expiration),
+    expiration: new Date(Number(data.expiration)),
     createdAt: new Date(),
   };
 
@@ -81,13 +81,6 @@ export async function createNotificationChannel(calendarId: string) {
     .db()
     .collection("gcalNotificationChannels")
     .insertOne(channel);
-
-  const agenda = await getAgenda();
-  agenda.schedule(
-    new Date(channel.expiration),
-    "renewGCalNotificationChannel",
-    { calendarId, id: channel.id }
-  );
 
   console.log("Google Calendar notification channel created");
 
@@ -115,10 +108,15 @@ export async function initSync(calendarId) {
   const doc = await mongoClient
     .db()
     .collection("gcalNotificationChannels")
-    .findOne({ calendarId, expiration: { $gt: Date.now() } });
+    .findOne({ calendarId, expiration: { $gt: new Date() } });
 
   if (!doc) {
-    await createNotificationChannel(calendarId);
+    const channel = await createNotificationChannel(calendarId);
+    const agenda = await getAgenda();
+    agenda.schedule(channel.expiration, "renewGCalNotificationChannel", {
+      calendarId,
+      id: channel.id,
+    });
   }
   console.log("Google Calendar sync initialized");
 }
