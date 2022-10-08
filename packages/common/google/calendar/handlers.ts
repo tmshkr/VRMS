@@ -17,7 +17,9 @@ export async function handleEvents(gcalEvents) {
     toCreate.delete(record.gcal_event_id);
   }
 
-  toCreate.forEach((eventId) => handleCreateEvent(gcalEvents, eventId));
+  toCreate.forEach(
+    async (eventId) => await handleCreateEvent(gcalEvents, eventId)
+  );
 
   for (const record of events) {
     const gcalEvent = gcalEvents[record.gcal_event_id];
@@ -43,8 +45,8 @@ export async function handleExceptions(gcalEvents) {
     toCreate.delete(record.gcal_event_id);
   }
 
-  toCreate.forEach((eventId) =>
-    handleCreateEventException(gcalEvents, eventId)
+  toCreate.forEach(
+    async (eventId) => await handleCreateEventException(gcalEvents, eventId)
   );
 
   for (const record of eventExceptions) {
