@@ -16,7 +16,9 @@ export function getNextOccurrence(
     return event.start_time && start < event.start_time
       ? {
           originalStartTime: event.start_time,
-          startTime: event.start_time,
+          startTime: event.all_day
+            ? getAllDayStartTime(event.start_time, event.timezone)
+            : event.start_time,
         }
       : { originalStartTime: undefined, startTime: undefined };
   }
