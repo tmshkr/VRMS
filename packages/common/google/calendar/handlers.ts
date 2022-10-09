@@ -2,7 +2,6 @@ import prisma from "common/prisma";
 import { patchCalendarEvent } from "common/google/calendar";
 import { scheduleNextCheckin } from "common/events";
 import { getSlug } from "common/slug";
-import { Prisma } from "@prisma/client";
 
 export async function handleEvents(gcalEvents) {
   const gcalEventIds = Object.keys(gcalEvents);
@@ -25,7 +24,20 @@ export async function handleEvents(gcalEvents) {
     const gcalEvent = gcalEvents[record.gcal_event_id];
     await prisma.event.update({
       where: { gcal_event_id: gcalEvent.id },
-      data: createEventUpdate(gcalEvent),
+      data: {
+        all_day: gcalEvent.start?.date ? true : undefined,
+        status: gcalEvent.status.toUpperCase(),
+        start_time: gcalEvent.start
+          ? new Date(gcalEvent.start.dateTime || gcalEvent.start.date)
+          : undefined,
+        end_time: gcalEvent.end
+          ? new Date(gcalEvent.end.dateTime || gcalEvent.end.date)
+          : undefined,
+        recurrence: gcalEvent.recurrence,
+        title: gcalEvent.summary,
+        description: gcalEvent.description,
+        timezone: gcalEvent.start?.timeZone,
+      },
     });
 
     scheduleNextCheckin(record.id);
@@ -53,10 +65,21 @@ export async function handleExceptions(gcalEvents) {
     const gcalEvent = gcalEvents[record.gcal_event_id];
     await prisma.eventException.update({
       where: { gcal_event_id: gcalEvent.id },
-      data: createExceptionUpdate(gcalEvent),
+      data: {
+        all_day: gcalEvent.start?.date ? true : false,
+        status: gcalEvent.status.toUpperCase(),
+        start_time: gcalEvent.start
+          ? new Date(gcalEvent.start.dateTime || gcalEvent.start.date)
+          : undefined,
+        end_time: gcalEvent.end
+          ? new Date(gcalEvent.end.dateTime || gcalEvent.end.date)
+          : undefined,
+        title: gcalEvent.summary,
+        description: gcalEvent.description,
+      },
     });
 
-    scheduleNextCheckin(record.event_id);
+    await scheduleNextCheckin(record.event_id);
   }
 }
 
@@ -100,16 +123,15 @@ export async function handleCreateEvent(gcalEvents, gcalEventId) {
 
   const newEvent = await prisma.event.create({
     data: {
+      all_day: gcalEvent.start?.date ? true : false,
       created_by_id: oldEvent.created_by_id,
-      end_time: new Date(gcalEvent.end.dateTime),
-      end_date: gcalEvent.end.date,
+      start_time: new Date(gcalEvent.start.dateTime || gcalEvent.start.date),
+      end_time: new Date(gcalEvent.end.dateTime || gcalEvent.end.date),
       gcal_event_id: gcalEvent.id,
       project_id: oldEvent.project_id,
       slack_channel_id: oldEvent.slack_channel_id,
       slack_team_id: oldEvent.slack_team_id,
       recurrence: gcalEvent.recurrence,
-      start_time: new Date(gcalEvent.start.dateTime),
-      start_date: gcalEvent.start.date,
       title: gcalEvent.summary,
       timezone: gcalEvent.start.timeZone,
       description: gcalEvent.description,
@@ -127,9 +149,7 @@ export async function handleCreateEvent(gcalEvents, gcalEventId) {
     },
   });
 
-  if (newEvent.start_time) {
-    scheduleNextCheckin(newEvent.id, newEvent.start_time);
-  }
+  await scheduleNextCheckin(newEvent.id);
 }
 
 export async function handleCreateException(gcalExceptions, gcalEventId) {
@@ -147,13 +167,16 @@ export async function handleCreateException(gcalExceptions, gcalEventId) {
 
   const row = {
     event_id: record.id,
-    original_start_time:
-      gcalEvent.originalStartTime?.dateTime ||
-      gcalEvent.originalStartTime?.date,
-    start_time: gcalEvent.start?.dateTime || null,
-    start_date: gcalEvent.start?.date || null,
-    end_time: gcalEvent.end?.dateTime || null,
-    end_date: gcalEvent.end?.date || null,
+    original_start_time: new Date(
+      gcalEvent.originalStartTime.dateTime || gcalEvent.originalStartTime.date
+    ),
+    all_day: gcalEvent.start?.date ? true : false,
+    start_time: gcalEvent.start
+      ? new Date(gcalEvent.start.dateTime || gcalEvent.start.date)
+      : undefined,
+    end_time: gcalEvent.end
+      ? new Date(gcalEvent.end.dateTime || gcalEvent.end.date)
+      : undefined,
     gcal_event_id: gcalEvent.id,
     title: gcalEvent.summary,
     description: gcalEvent.description,
@@ -171,30 +194,5 @@ export async function handleCreateException(gcalExceptions, gcalEventId) {
     update: row,
   });
 
-  scheduleNextCheckin(record.id);
-}
-
-function createEventUpdate(gcalEvent) {
-  return {
-    status: gcalEvent.status.toUpperCase(),
-    start_time: gcalEvent.start?.dateTime || null,
-    start_date: gcalEvent.start?.date || null,
-    end_time: gcalEvent.end?.dateTime || null,
-    end_date: gcalEvent.end?.date || null,
-    recurrence: gcalEvent.recurrence || null,
-    title: gcalEvent.summary,
-    description: gcalEvent.description,
-  };
-}
-
-function createExceptionUpdate(gcalEvent) {
-  return {
-    status: gcalEvent.status.toUpperCase(),
-    start_time: gcalEvent.start?.dateTime || null,
-    start_date: gcalEvent.start?.date || null,
-    end_time: gcalEvent.end?.dateTime || null,
-    end_date: gcalEvent.end?.date || null,
-    title: gcalEvent.summary,
-    description: gcalEvent.description,
-  };
+  await scheduleNextCheckin(record.id);
 }

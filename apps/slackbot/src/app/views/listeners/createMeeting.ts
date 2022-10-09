@@ -68,7 +68,7 @@ export const createMeeting = async ({ ack, body, view, client, logger }) => {
       break;
   }
 
-  const recurrence = rule ? [rule?.toString().split("\n")[1]] : undefined;
+  const recurrence = rule ? [rule.toString().split("\n")[1]] : undefined;
 
   const participants = await prisma.user.findMany({
     where: {

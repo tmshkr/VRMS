@@ -27,13 +27,17 @@ export function getNextOccurrence(
       .format("YYYYMMDDTHHmmss")}\n${event.recurrence[0]}`
   );
   const maxDate = new Date(8640000000000000);
-  const exceptionByInstance = {};
+  const exceptionsByOriginalStartTime = {};
 
   // Find the earliest upcoming exception that is CONFIRMED,
   // so that we can compare it to the nextInstance
   let earliestException = { startTime: maxDate, originalStartTime: maxDate };
   for (const e of event.exceptions) {
-    exceptionByInstance[e.original_start_time.toISOString()] = e;
+    if (e.all_day && e.start_time) {
+      e.start_time = getAllDayStartTime(e.start_time, event.timezone);
+    }
+    exceptionsByOriginalStartTime[e.original_start_time.toISOString()] = e;
+
     if (
       e.status === "CONFIRMED" &&
       e.start_time &&
@@ -55,8 +59,8 @@ export function getNextOccurrence(
     // find the next instance that is not cancelled or tentative
     const key = date.toISOString();
     if (
-      !exceptionByInstance[key] ||
-      exceptionByInstance[key].status === "CONFIRMED"
+      !exceptionsByOriginalStartTime[key] ||
+      exceptionsByOriginalStartTime[key].status === "CONFIRMED"
     ) {
       found = true;
     }
@@ -68,8 +72,10 @@ export function getNextOccurrence(
   if (!nextByRule)
     return { originalStartTime: undefined, startTime: undefined };
 
-  const nextInstance = exceptionByInstance[nextByRule.toISOString()]
-    ? exceptionByInstance[nextByRule.toISOString()].start_time
+  const nextInstance = exceptionsByOriginalStartTime[nextByRule.toISOString()]
+    ? exceptionsByOriginalStartTime[nextByRule.toISOString()].start_time
+    : event.all_day
+    ? getAllDayStartTime(nextByRule, event.timezone)
     : nextByRule;
 
   return nextInstance && nextInstance < earliestException.startTime
@@ -122,4 +128,8 @@ export async function scheduleNextCheckin(
     await job.remove();
     console.log("Removed job");
   }
+}
+
+function getAllDayStartTime(date: Date, timezone: string) {
+  return dayjs.tz(dayjs(date).format("YYYY-MM-DDT09:mm:ss"), timezone).toDate();
 }

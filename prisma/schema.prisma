@@ -142,12 +142,11 @@ enum EventType {
 model Event {
   id BigInt @id @default(autoincrement())
 
+  all_day          Boolean     @default(false)
   title            String
   description      String
-  start_time       DateTime?
-  start_date       String?
-  end_time         DateTime?
-  end_date         String?
+  start_time       DateTime
+  end_time         DateTime
   gcal_event_id    String      @unique
   recurrence       Json?
   project_id       BigInt
@@ -177,10 +176,9 @@ model EventException {
   event_id            BigInt
   original_start_time DateTime
 
+  all_day       Boolean?
   start_time    DateTime?
-  start_date    String?
   end_time      DateTime?
-  end_date      String?
   gcal_event_id String      @unique
   description   String?
   title         String?

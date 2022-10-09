@@ -12,7 +12,6 @@ export async function syncEvents(calendarId: string) {
     .findOne({ _id: calendarId });
 
   const { items, nextSyncToken } = await getEvents(calendarId, doc?.syncToken);
-  console.log(items);
 
   const events = {};
   const exceptions = {};
