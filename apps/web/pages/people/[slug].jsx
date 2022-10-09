@@ -1,4 +1,4 @@
-import Head from "next/head";
+import { NextSeo } from "next-seo";
 import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import dynamic from "next/dynamic";
@@ -71,9 +71,7 @@ export default function ProfilePage(props) {
 
   return (
     <div className="sm:flex">
-      <Head>
-        <title>{profile.real_name} | Meetbot</title>
-      </Head>
+      <NextSeo title={profile.real_name} />
       <div>
         <img
           className="max-w-full sm:max-w-xs rounded-md m-auto"

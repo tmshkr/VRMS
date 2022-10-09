@@ -1,9 +1,11 @@
 import prisma from "common/prisma";
 import Link from "next/link";
+import { NextSeo } from "next-seo";
 
-export default function Web({ people }) {
+export default function People({ people }) {
   return (
     <div>
+      <NextSeo title="People" />
       <h1>People</h1>
       <ol className="child:list-none p-0">
         {people.map(({ id, username, real_name }) => (

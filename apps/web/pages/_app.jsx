@@ -3,6 +3,8 @@ import { SessionProvider } from "next-auth/react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
 import { Provider } from "react-redux";
+import { DefaultSeo } from "next-seo";
+
 import { Dashboard } from "components/Dashboard";
 import { useEffect } from "react";
 
@@ -16,6 +18,17 @@ export default function App({ Component, pageProps }) {
   return (
     <SessionProvider session={pageProps.session} refetchInterval={0}>
       <Provider store={store}>
+        <DefaultSeo
+          openGraph={{
+            type: "website",
+            locale: "en_US",
+            url: "https://meetbot.app/",
+            site_name: "meetbot.app",
+            description: "Meetbot helps you run meetings in Slack.",
+          }}
+          titleTemplate="%s | Meetbot"
+          defaultTitle="Meetbot"
+        />
         <Login>
           <Dashboard>
             {Component.auth ? (
