@@ -2,7 +2,7 @@ version: "3"
 
 services:
   app:
-    image: tmshkr/vrms:${ENVIRONMENT}
+    image: tmshkr/meetbot:${ENVIRONMENT}
     command: npm run start
     env_file:
       - .env

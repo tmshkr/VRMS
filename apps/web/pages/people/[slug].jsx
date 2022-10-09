@@ -1,4 +1,4 @@
-import Head from "next/head";
+import { NextSeo } from "next-seo";
 import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import dynamic from "next/dynamic";
@@ -71,9 +71,7 @@ export default function ProfilePage(props) {
 
   return (
     <div className="sm:flex">
-      <Head>
-        <title>{profile.real_name} | VRMS</title>
-      </Head>
+      <NextSeo title={profile.real_name} />
       <div>
         <img
           className="max-w-full sm:max-w-xs rounded-md m-auto"
@@ -115,11 +113,10 @@ export default function ProfilePage(props) {
           <div>
             <h3>Projects</h3>
             <ul>
-              {projects.map((project) => {
-                const { id, name } = project;
+              {projects.map(({ slug, name }) => {
                 return (
-                  <li key={id}>
-                    <Link href={`/projects/${id}`}>{name}</Link>
+                  <li key={slug}>
+                    <Link href={`/projects/${slug}`}>{name}</Link>
                   </li>
                 );
               })}
@@ -128,11 +125,10 @@ export default function ProfilePage(props) {
           <div>
             <h3>Meetings</h3>
             <ul>
-              {meetings.map((meeting) => {
-                const { id, title } = meeting;
+              {meetings.map(({ slug, title }) => {
                 return (
-                  <li key={id}>
-                    <Link href={`/meetings/${id}`}>{title}</Link>
+                  <li key={slug}>
+                    <Link href={`/meetings/${slug}`}>{title}</Link>
                   </li>
                 );
               })}
@@ -195,33 +191,22 @@ export default function ProfilePage(props) {
 export async function getServerSideProps(context) {
   const { slug } = context.params;
 
-  const select = {
-    id: true,
-    first_name: true,
-    profile_image: true,
-    real_name: true,
-    username: true,
-    meeting_assignments: {
-      select: { meeting: { select: { id: true, title: true } } },
+  const user = await prisma.user.findUnique({
+    where: { username: slug },
+    select: {
+      id: true,
+      first_name: true,
+      profile_image: true,
+      real_name: true,
+      username: true,
+      event_assignments: {
+        select: { event: { select: { slug: true, title: true } } },
+      },
+      team_assignments: {
+        select: { project: { select: { slug: true, name: true } } },
+      },
     },
-    team_assignments: {
-      select: { project: { select: { id: true, name: true } } },
-    },
-  };
-
-  // URL slug param can be either a username or a user id
-  let user;
-  if (Number(slug)) {
-    user = await prisma.user.findUnique({
-      where: { id: Number(slug) },
-      select,
-    });
-  } else {
-    user = await prisma.user.findUnique({
-      where: { username: slug },
-      select,
-    });
-  }
+  });
 
   if (!user) {
     return {
@@ -238,7 +223,7 @@ export async function getServerSideProps(context) {
     profile_image,
     real_name,
     username,
-    meeting_assignments,
+    event_assignments,
     team_assignments,
   } = user;
 
@@ -246,12 +231,12 @@ export async function getServerSideProps(context) {
   const doc = await mongoClient
     .db()
     .collection("userProfiles")
-    .findOne({ _id: user.id });
+    .findOne({ _id: user.id.toString() });
 
   return {
     props: {
       profile: {
-        id,
+        id: id.toString(),
         headline: doc?.headline || "",
         first_name,
         profile_image,
@@ -259,7 +244,7 @@ export async function getServerSideProps(context) {
         real_name,
         username,
       },
-      meetings: meeting_assignments.map(({ meeting }) => meeting),
+      meetings: event_assignments.map(({ event }) => event),
       projects: team_assignments.map(({ project }) => project),
     },
   };

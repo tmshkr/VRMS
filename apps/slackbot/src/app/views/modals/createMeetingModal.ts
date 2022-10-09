@@ -3,17 +3,12 @@ import prisma from "common/prisma";
 export const createMeetingModal = async ({ body, client, ack, logger }) => {
   await ack();
   const slack_id = body.user.id;
-  const { team_assignments } = await prisma.user
-    .findUnique({
-      where: { slack_id },
-      select: { team_assignments: { select: { project: true } } },
-    })
-    .then((user) => {
-      if (!user) {
-        throw new Error(`Slack user not found: ${slack_id}`);
-      }
-      return user;
-    });
+  const { team_assignments } = await prisma.user.findUniqueOrThrow({
+    where: {
+      slack_id_slack_team_id: { slack_id, slack_team_id: body.user.team_id },
+    },
+    select: { team_assignments: { select: { project: true } } },
+  });
 
   if (!team_assignments.length) {
     await client.views.open({
@@ -118,6 +113,7 @@ const renderMeetingModal = (team_assignments, slack_id) => ({
         filter: {
           include: ["im"],
           exclude_bot_users: true,
+          exclude_external_shared_channels: true,
         },
       },
       label: {

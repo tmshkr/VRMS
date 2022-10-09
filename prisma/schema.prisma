@@ -20,7 +20,7 @@ enum AppRole {
 }
 
 model AppRoleOnUser {
-  user_id Int
+  user_id BigInt
   role    AppRole
 
   created_at DateTime @default(now())
@@ -31,56 +31,40 @@ model AppRoleOnUser {
   @@id([user_id, role])
 }
 
-model Account {
-  provider            String
-  provider_account_id String
-
-  access_token              String  @db.Text
-  email                     String
-  gh_username               String?
-  name                      String
-  scope                     String
-  token_type                String
-  type                      String
-  two_factor_authentication Boolean
-  vrms_user_id              Int
-
-  created_at DateTime @default(now())
-  updated_at DateTime @default(now()) @updatedAt
-
-  user User @relation(fields: [vrms_user_id], references: [id])
-
-  @@id([provider, provider_account_id])
-  @@unique([provider, vrms_user_id])
+enum Visibility {
+  PUBLIC
+  PRIVATE
 }
 
 model User {
-  id Int @id @default(autoincrement())
+  id BigInt @id @default(autoincrement())
 
-  checkins             MeetingCheckin[]
-  completed_onboarding Boolean          @default(false)
-  email                String           @unique
+  completed_onboarding Boolean    @default(false)
+  email                String
   first_name           String
   last_name            String
   real_name            String
   profile_image        String
-  slack_id             String           @unique
+  slack_id             String     @unique
   slack_team_id        String
   timezone             String
-  username             String?          @unique
+  username             String     @unique
+  visibility           Visibility @default(PUBLIC)
 
   created_at DateTime @default(now())
   updated_at DateTime @default(now()) @updatedAt
 
-  accounts            Account[]
-  app_roles           AppRoleOnUser[]
-  created_meetings    Meeting[]
-  created_projects    Project[]
-  meeting_assignments MeetingParticipant[]
-  members_added       TeamMember[]         @relation("AddMember")
-  participants_added  MeetingParticipant[] @relation("AddParticipant")
-  team_assignments    TeamMember[]
+  app_roles          AppRoleOnUser[]
+  checkins           EventCheckin[]
+  created_events     Event[]
+  created_projects   Project[]
+  event_assignments  EventParticipant[]
+  members_added      TeamMember[]       @relation("AddMember")
+  participants_added EventParticipant[] @relation("AddParticipant")
+  team_assignments   TeamMember[]
 
+  @@unique([slack_id, slack_team_id])
+  @@index([slack_id, slack_team_id])
   @@index(slack_id)
   @@index(username)
 }
@@ -92,17 +76,24 @@ enum ProjectStatus {
 }
 
 model Project {
-  id Int @id @default(autoincrement())
+  id BigInt @id @default(autoincrement())
 
-  created_by_id   Int
-  created_by_user User          @relation(fields: [created_by_id], references: [id])
-  meetings        Meeting[]
-  name            String
-  status          ProjectStatus @default(ACTIVE)
-  team_members    TeamMember[]
+  created_by_id    BigInt
+  created_by_user  User          @relation(fields: [created_by_id], references: [id])
+  gcal_calendar_id String
+  name             String
+  slack_team_id    String
+  slug             String        @unique
+  status           ProjectStatus @default(ACTIVE)
+  visibility       Visibility    @default(PUBLIC)
+
+  events       Event[]
+  team_members TeamMember[]
 
   created_at DateTime @default(now())
   updated_at DateTime @default(now()) @updatedAt
+
+  @@index(slug)
 }
 
 enum ProjectRole {
@@ -118,10 +109,10 @@ enum MemberStatus {
 }
 
 model TeamMember {
-  user_id    Int
-  project_id Int
+  user_id    BigInt
+  project_id BigInt
 
-  added_by_id Int
+  added_by_id BigInt
   status      MemberStatus @default(ACTIVE)
   role        ProjectRole  @default(MEMBER)
   position    String?
@@ -138,86 +129,101 @@ model TeamMember {
   @@index(project_id)
 }
 
-enum MeetingStatus {
+enum EventStatus {
   CONFIRMED
   TENTATIVE
   CANCELLED
 }
 
-model Meeting {
-  id Int @id @default(autoincrement())
+enum EventType {
+  MEETING
+}
 
+model Event {
+  id BigInt @id @default(autoincrement())
+
+  all_day          Boolean     @default(false)
   title            String
   description      String
   start_time       DateTime
   end_time         DateTime
-  gcal_event_id    String        @unique
-  rrule            String?
-  project_id       Int
-  created_by_id    Int
+  gcal_event_id    String      @unique
+  recurrence       Json?
+  project_id       BigInt
+  created_by_id    BigInt
   slack_channel_id String
-  status           MeetingStatus @default(CONFIRMED)
+  slack_team_id    String
+  slug             String      @unique
+  status           EventStatus @default(CONFIRMED)
+  timezone         String
+  type             EventType   @default(MEETING)
+  visibility       Visibility  @default(PUBLIC)
 
   created_at DateTime @default(now())
   updated_at DateTime @default(now()) @updatedAt
 
-  checkins        MeetingCheckin[]
-  created_by_user User                 @relation(fields: [created_by_id], references: [id])
-  exceptions      MeetingException[]
-  participants    MeetingParticipant[]
-  project         Project              @relation(fields: [project_id], references: [id])
+  checkins        EventCheckin[]
+  created_by_user User               @relation(fields: [created_by_id], references: [id])
+  exceptions      EventException[]
+  participants    EventParticipant[]
+  project         Project            @relation(fields: [project_id], references: [id])
+
+  @@index(gcal_event_id)
+  @@index(slug)
 }
 
-model MeetingException {
-  meeting_id Int
-  instance   DateTime
+model EventException {
+  event_id            BigInt
+  original_start_time DateTime
 
+  all_day       Boolean?
   start_time    DateTime?
   end_time      DateTime?
-  gcal_event_id String        @unique
+  gcal_event_id String      @unique
   description   String?
   title         String?
-  status        MeetingStatus
+  status        EventStatus
 
-  recurring_event Meeting @relation(fields: [meeting_id], references: [id], onDelete: Cascade)
+  recurring_event Event @relation(fields: [event_id], references: [id], onDelete: Cascade)
 
-  @@id([meeting_id, instance])
-  @@index(meeting_id)
-  @@index(instance)
+  @@id([event_id, original_start_time])
+  @@index(event_id)
+  @@index(original_start_time)
+  @@index(gcal_event_id)
 }
 
-model MeetingParticipant {
-  meeting_id   Int
-  user_id      Int
-  meeting_time DateTime // use new Date(0) to represent the default for a given meeting/user combination
+model EventParticipant {
+  event_id   BigInt
+  user_id    BigInt
+  event_time DateTime // use new Date(0) to represent the default for a given event/user combination
 
-  added_by_id Int
+  added_by_id BigInt
   is_active   Boolean @default(true)
 
   created_at DateTime @default(now())
   updated_at DateTime @default(now()) @updatedAt
 
-  added_by_user User    @relation(name: "AddParticipant", fields: [added_by_id], references: [id])
-  meeting       Meeting @relation(fields: [meeting_id], references: [id], onDelete: Cascade)
-  participant   User    @relation(fields: [user_id], references: [id])
+  added_by_user User  @relation(name: "AddParticipant", fields: [added_by_id], references: [id])
+  event         Event @relation(fields: [event_id], references: [id], onDelete: Cascade)
+  participant   User  @relation(fields: [user_id], references: [id])
 
-  @@id([meeting_id, user_id, meeting_time])
+  @@id([event_id, user_id, event_time])
   @@index(user_id)
-  @@index(meeting_id)
+  @@index(event_id)
 }
 
-model MeetingCheckin {
-  meeting_id   Int
-  user_id      Int
-  meeting_time DateTime
+model EventCheckin {
+  event_id   BigInt
+  user_id    BigInt
+  event_time DateTime
 
   created_at DateTime @default(now())
   updated_at DateTime @default(now()) @updatedAt
 
-  meeting Meeting @relation(fields: [meeting_id], references: [id], onDelete: Cascade)
-  user    User    @relation(fields: [user_id], references: [id])
+  event Event @relation(fields: [event_id], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [user_id], references: [id])
 
-  @@id([meeting_id, user_id, meeting_time])
-  @@index(meeting_id)
+  @@id([event_id, user_id, event_time])
+  @@index(event_id)
   @@index(user_id)
 }

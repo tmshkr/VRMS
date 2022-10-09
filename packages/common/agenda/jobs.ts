@@ -1,13 +1,17 @@
 import prisma from "common/prisma";
-import { createNotificationChannel } from "common/google/sync";
+import {
+  createNotificationChannel,
+  stopNotificationChannel,
+} from "common/google/calendar/sync";
 import { sendMeetingCheckin } from "common/slack/notifications";
-import { getNextOccurrence } from "common/meetings";
+import { getNextOccurrence } from "common/events";
+import { getMongoClient } from "common/mongo";
 
 export function registerJobs(agenda) {
   agenda.define("sendMeetingCheckin", async (job) => {
-    const { meeting_id } = job.attrs.data;
-    const meeting = await prisma.meeting.findUniqueOrThrow({
-      where: { id: meeting_id },
+    const { event_id } = job.attrs.data;
+    const event = await prisma.event.findUnique({
+      where: { id: BigInt(event_id) },
       include: {
         exceptions: {
           orderBy: { start_time: "asc" },
@@ -15,8 +19,14 @@ export function registerJobs(agenda) {
       },
     });
 
-    sendMeetingCheckin(meeting);
-    const { startTime: nextRunAt } = getNextOccurrence(meeting);
+    if (!event) {
+      console.log("event not found", { event_id });
+      return;
+    }
+
+    sendMeetingCheckin(event);
+
+    const { startTime: nextRunAt } = getNextOccurrence(event);
     if (nextRunAt) {
       job.schedule(nextRunAt);
       job.save();
@@ -26,8 +36,17 @@ export function registerJobs(agenda) {
   });
 
   agenda.define("renewGCalNotificationChannel", async (job) => {
-    const channel = await createNotificationChannel();
-    job.schedule(new Date(channel.expiration));
+    const mongoClient = await getMongoClient();
+    const { id, calendarId, resourceId } = await mongoClient
+      .db()
+      .collection("gcalNotificationChannels")
+      .findOne({ id: job.attrs.data.id });
+
+    await stopNotificationChannel(id, resourceId);
+
+    const newChannel = await createNotificationChannel(calendarId);
+    job.attrs.data.id = newChannel.id;
+    job.schedule(new Date(newChannel.expiration));
     job.save();
   });
 

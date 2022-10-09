@@ -8,37 +8,23 @@ export const withUser = async (req, res, next) => {
     return;
   }
 
-  const { provider, provider_account_id } = nextToken;
+  const { provider_account_id } = nextToken;
 
   try {
-    const vrms_user = await prisma.account
-      .findUniqueOrThrow({
-        where: {
-          provider_provider_account_id: {
-            provider,
-            provider_account_id,
-          },
-        },
-        select: {
-          user: {
-            select: {
-              id: true,
-              completed_onboarding: true,
-              slack_id: true,
-              username: true,
-              app_roles: true,
-            },
-          },
-        },
-      })
-      .then(({ user }) => {
-        return {
-          ...user,
-          app_roles: user.app_roles.map(({ role }) => role),
-        };
-      });
+    const user = await prisma.user.findUniqueOrThrow({
+      where: { slack_id: provider_account_id },
+      select: {
+        id: true,
+        completed_onboarding: true,
+        slack_id: true,
+        username: true,
+        app_roles: true,
+      },
+    });
 
-    req.vrms_user = vrms_user;
+    (user as any).app_roles = user.app_roles.map(({ role }) => role);
+    (user as any).id = user.id.toString();
+    req.user = user;
 
     return next();
   } catch (err: any) {

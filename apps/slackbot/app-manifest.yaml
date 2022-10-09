@@ -1,6 +1,6 @@
 display_information:
-  name: VRMS-dev-YOUR-NAME
-  description: VRMS dev app
+  name: meetbot-dev-YOUR-NAME
+  description: meetbot dev app
   background_color: "#2f3e6b"
 features:
   app_home:

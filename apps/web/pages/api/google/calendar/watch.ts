@@ -1,11 +1,12 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { syncMeetings } from "common/google/sync";
+import { syncEvents } from "common/google/calendar/sync";
 import { getMongoClient } from "common/mongo";
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  console.log(req.headers);
   const id = req.headers["x-goog-channel-id"];
   const mongoClient = await getMongoClient();
   const doc = await mongoClient
@@ -18,5 +19,5 @@ export default async function handler(
   }
 
   res.status(200).send("OK");
-  syncMeetings();
+  syncEvents(doc.calendarId);
 }

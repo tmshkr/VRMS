@@ -42,3 +42,5 @@ repl*
 *.pem
 
 dist
+*.key
+*.crt

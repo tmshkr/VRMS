@@ -1,5 +1,5 @@
 {
-  "name": "vrms",
+  "name": "meetbot",
   "version": "0.0.0",
   "private": true,
   "workspaces": [
@@ -15,7 +15,7 @@
     "prisma:migrate": "prisma migrate deploy",
     "prisma:seed": "prisma db seed",
     "prisma:studio": "prisma studio",
-    "start": "npm run prisma:migrate && npm run prisma:seed && turbo run start --parallel"
+    "start": "npm run prisma:migrate && turbo run start --parallel"
   },
   "devDependencies": {
     "@mermaid-js/mermaid-cli": "^9.1.6",
@@ -52,6 +52,7 @@
     "babel-plugin-superjson-next": "^0.4.4",
     "classnames": "^2.3.1",
     "cookies": "^0.8.0",
+    "cuid": "^2.1.8",
     "dayjs": "^1.11.5",
     "easymde": "^2.17.0",
     "express": "^4.18.1",
@@ -64,14 +65,16 @@
     "line-reader": "^0.4.0",
     "marked-react": "^1.3.0",
     "mongodb": "^4.9.0",
-    "next-auth": "^4.10.3",
+    "next-auth": "4.12.0",
     "next-connect": "^1.0.0-next.3",
+    "next-seo": "^5.5.0",
     "next-transpile-modules": "^9.0.0",
     "octokit": "^2.0.7",
     "react-confetti": "^6.1.0",
     "react-hook-form": "^7.35.0",
     "react-redux": "^8.0.2",
     "rrule": "^2.6.4",
+    "slugify": "^1.6.5",
     "superjson": "^1.10.0",
     "ts-node": "^10.7.0"
   },

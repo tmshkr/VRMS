@@ -3,29 +3,23 @@ on:
   push:
     branches:
       - main
-      - staging
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Get branch name
-        id: branch-name
-        uses: tj-actions/branch-names@v6
       - run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
-      - run: docker build -t tmshkr/vrms:${{ steps.branch-name.outputs.current_branch }} .
-      - run: docker push tmshkr/vrms:${{ steps.branch-name.outputs.current_branch }}
+      - run: docker build -t ${{ secrets.DOCKER_USERNAME }}/meetbot:main .
+      - run: docker push ${{ secrets.DOCKER_USERNAME }}/meetbot:main
   deploy:
     runs-on: ubuntu-latest
     needs: build
+    environment: main
     steps:
       - uses: actions/checkout@v2
-      - name: Get branch name
-        id: branch-name
-        uses: tj-actions/branch-names@v6
       - name: Set server_name
-        run: node nginx/server_name.js ${{ steps.branch-name.outputs.current_branch }}
+        run: node nginx/server_name.js "${{ secrets.SERVER_NAMES }}"
       - name: Generate deployment package
         run: zip -r deploy.zip . -x '*.git*'
       - name: Deploy to EB
@@ -33,9 +27,9 @@ jobs:
         with:
           aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          application_name: vrms
-          environment_name: vrms-${{ steps.branch-name.outputs.current_branch }}
-          version_label: ${{ steps.branch-name.outputs.current_branch }}-${{ github.sha }}
+          application_name: meetbot
+          environment_name: meetbot-main
+          version_label: main-${{ github.sha }}
           version_description: ${{ github.event.head_commit.message }}
           region: us-west-1
           deployment_package: deploy.zip

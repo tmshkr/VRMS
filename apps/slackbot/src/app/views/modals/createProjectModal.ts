@@ -26,6 +26,24 @@ export const createProjectModal = async ({ body, client, ack, logger }) => {
         },
         {
           type: "input",
+          label: {
+            type: "plain_text",
+            text: "Google Calendar ID",
+          },
+          element: {
+            type: "plain_text_input",
+            action_id: "gcal_calendar_id",
+          },
+        },
+        {
+          type: "section",
+          text: {
+            type: "mrkdwn",
+            text: `_Check out the <${process.env.NEXTAUTH_URL}/integrate-google-calendar|Google Calendar Integration Guide> for help with this_`,
+          },
+        },
+        {
+          type: "input",
           element: {
             type: "multi_conversations_select",
             placeholder: {
@@ -38,6 +56,7 @@ export const createProjectModal = async ({ body, client, ack, logger }) => {
             filter: {
               include: ["im"],
               exclude_bot_users: true,
+              exclude_external_shared_channels: true,
             },
           },
           label: {
