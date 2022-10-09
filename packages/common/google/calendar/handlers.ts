@@ -40,7 +40,7 @@ export async function handleEvents(gcalEvents) {
       },
     });
 
-    scheduleNextCheckin(record.id);
+    await scheduleNextCheckin(record.id);
   }
 }
 
