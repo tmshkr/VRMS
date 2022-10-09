@@ -2,6 +2,9 @@
 CREATE TYPE "AppRole" AS ENUM ('ADMIN', 'FACILITATOR');
 
 -- CreateEnum
+CREATE TYPE "Visibility" AS ENUM ('PUBLIC', 'PRIVATE');
+
+-- CreateEnum
 CREATE TYPE "ProjectStatus" AS ENUM ('ACTIVE', 'INACTIVE', 'INDETERMINATE');
 
 -- CreateEnum
@@ -11,7 +14,10 @@ CREATE TYPE "ProjectRole" AS ENUM ('OWNER', 'MEMBER', 'GUEST');
 CREATE TYPE "MemberStatus" AS ENUM ('ACTIVE', 'INACTIVE', 'INDETERMINATE');
 
 -- CreateEnum
-CREATE TYPE "MeetingStatus" AS ENUM ('CONFIRMED', 'TENTATIVE', 'CANCELLED');
+CREATE TYPE "EventStatus" AS ENUM ('CONFIRMED', 'TENTATIVE', 'CANCELLED');
+
+-- CreateEnum
+CREATE TYPE "EventType" AS ENUM ('MEETING');
 
 -- CreateTable
 CREATE TABLE "AppRoleOnUser" (
@@ -36,6 +42,7 @@ CREATE TABLE "User" (
     "slack_team_id" TEXT NOT NULL,
     "timezone" TEXT NOT NULL,
     "username" TEXT NOT NULL,
+    "visibility" "Visibility" NOT NULL DEFAULT 'PUBLIC',
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -46,9 +53,12 @@ CREATE TABLE "User" (
 CREATE TABLE "Project" (
     "id" BIGSERIAL NOT NULL,
     "created_by_id" BIGINT NOT NULL,
+    "gcal_calendar_id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
-    "slug" TEXT,
+    "slack_team_id" TEXT NOT NULL,
+    "slug" TEXT NOT NULL,
     "status" "ProjectStatus" NOT NULL DEFAULT 'ACTIVE',
+    "visibility" "Visibility" NOT NULL DEFAULT 'PUBLIC',
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -70,60 +80,67 @@ CREATE TABLE "TeamMember" (
 );
 
 -- CreateTable
-CREATE TABLE "Meeting" (
+CREATE TABLE "Event" (
     "id" BIGSERIAL NOT NULL,
+    "all_day" BOOLEAN NOT NULL DEFAULT false,
     "title" TEXT NOT NULL,
     "description" TEXT NOT NULL,
     "start_time" TIMESTAMP(3) NOT NULL,
     "end_time" TIMESTAMP(3) NOT NULL,
     "gcal_event_id" TEXT NOT NULL,
-    "rrule" TEXT,
+    "recurrence" JSONB,
     "project_id" BIGINT NOT NULL,
     "created_by_id" BIGINT NOT NULL,
     "slack_channel_id" TEXT NOT NULL,
-    "status" "MeetingStatus" NOT NULL DEFAULT 'CONFIRMED',
+    "slack_team_id" TEXT NOT NULL,
+    "slug" TEXT NOT NULL,
+    "status" "EventStatus" NOT NULL DEFAULT 'CONFIRMED',
+    "timezone" TEXT NOT NULL,
+    "type" "EventType" NOT NULL DEFAULT 'MEETING',
+    "visibility" "Visibility" NOT NULL DEFAULT 'PUBLIC',
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT "Meeting_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "Event_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "MeetingException" (
-    "meeting_id" BIGINT NOT NULL,
-    "instance" TIMESTAMP(3) NOT NULL,
+CREATE TABLE "EventException" (
+    "event_id" BIGINT NOT NULL,
+    "original_start_time" TIMESTAMP(3) NOT NULL,
+    "all_day" BOOLEAN,
     "start_time" TIMESTAMP(3),
     "end_time" TIMESTAMP(3),
     "gcal_event_id" TEXT NOT NULL,
     "description" TEXT,
     "title" TEXT,
-    "status" "MeetingStatus" NOT NULL,
+    "status" "EventStatus" NOT NULL,
 
-    CONSTRAINT "MeetingException_pkey" PRIMARY KEY ("meeting_id","instance")
+    CONSTRAINT "EventException_pkey" PRIMARY KEY ("event_id","original_start_time")
 );
 
 -- CreateTable
-CREATE TABLE "MeetingParticipant" (
-    "meeting_id" BIGINT NOT NULL,
+CREATE TABLE "EventParticipant" (
+    "event_id" BIGINT NOT NULL,
     "user_id" BIGINT NOT NULL,
-    "meeting_time" TIMESTAMP(3) NOT NULL,
+    "event_time" TIMESTAMP(3) NOT NULL,
     "added_by_id" BIGINT NOT NULL,
     "is_active" BOOLEAN NOT NULL DEFAULT true,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT "MeetingParticipant_pkey" PRIMARY KEY ("meeting_id","user_id","meeting_time")
+    CONSTRAINT "EventParticipant_pkey" PRIMARY KEY ("event_id","user_id","event_time")
 );
 
 -- CreateTable
-CREATE TABLE "MeetingCheckin" (
-    "meeting_id" BIGINT NOT NULL,
+CREATE TABLE "EventCheckin" (
+    "event_id" BIGINT NOT NULL,
     "user_id" BIGINT NOT NULL,
-    "meeting_time" TIMESTAMP(3) NOT NULL,
+    "event_time" TIMESTAMP(3) NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT "MeetingCheckin_pkey" PRIMARY KEY ("meeting_id","user_id","meeting_time")
+    CONSTRAINT "EventCheckin_pkey" PRIMARY KEY ("event_id","user_id","event_time")
 );
 
 -- CreateIndex
@@ -148,40 +165,49 @@ CREATE UNIQUE INDEX "User_slack_id_slack_team_id_key" ON "User"("slack_id", "sla
 CREATE UNIQUE INDEX "Project_slug_key" ON "Project"("slug");
 
 -- CreateIndex
+CREATE INDEX "Project_slug_idx" ON "Project"("slug");
+
+-- CreateIndex
 CREATE INDEX "TeamMember_user_id_idx" ON "TeamMember"("user_id");
 
 -- CreateIndex
 CREATE INDEX "TeamMember_project_id_idx" ON "TeamMember"("project_id");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Meeting_gcal_event_id_key" ON "Meeting"("gcal_event_id");
+CREATE UNIQUE INDEX "Event_gcal_event_id_key" ON "Event"("gcal_event_id");
 
 -- CreateIndex
-CREATE INDEX "Meeting_gcal_event_id_idx" ON "Meeting"("gcal_event_id");
+CREATE UNIQUE INDEX "Event_slug_key" ON "Event"("slug");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "MeetingException_gcal_event_id_key" ON "MeetingException"("gcal_event_id");
+CREATE INDEX "Event_gcal_event_id_idx" ON "Event"("gcal_event_id");
 
 -- CreateIndex
-CREATE INDEX "MeetingException_meeting_id_idx" ON "MeetingException"("meeting_id");
+CREATE INDEX "Event_slug_idx" ON "Event"("slug");
 
 -- CreateIndex
-CREATE INDEX "MeetingException_instance_idx" ON "MeetingException"("instance");
+CREATE UNIQUE INDEX "EventException_gcal_event_id_key" ON "EventException"("gcal_event_id");
 
 -- CreateIndex
-CREATE INDEX "MeetingException_gcal_event_id_idx" ON "MeetingException"("gcal_event_id");
+CREATE INDEX "EventException_event_id_idx" ON "EventException"("event_id");
 
 -- CreateIndex
-CREATE INDEX "MeetingParticipant_user_id_idx" ON "MeetingParticipant"("user_id");
+CREATE INDEX "EventException_original_start_time_idx" ON "EventException"("original_start_time");
 
 -- CreateIndex
-CREATE INDEX "MeetingParticipant_meeting_id_idx" ON "MeetingParticipant"("meeting_id");
+CREATE INDEX "EventException_gcal_event_id_idx" ON "EventException"("gcal_event_id");
 
 -- CreateIndex
-CREATE INDEX "MeetingCheckin_meeting_id_idx" ON "MeetingCheckin"("meeting_id");
+CREATE INDEX "EventParticipant_user_id_idx" ON "EventParticipant"("user_id");
 
 -- CreateIndex
-CREATE INDEX "MeetingCheckin_user_id_idx" ON "MeetingCheckin"("user_id");
+CREATE INDEX "EventParticipant_event_id_idx" ON "EventParticipant"("event_id");
+
+-- CreateIndex
+CREATE INDEX "EventCheckin_event_id_idx" ON "EventCheckin"("event_id");
+
+-- CreateIndex
+CREATE INDEX "EventCheckin_user_id_idx" ON "EventCheckin"("user_id");
 
 -- AddForeignKey
 ALTER TABLE "AppRoleOnUser" ADD CONSTRAINT "AppRoleOnUser_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -199,25 +225,25 @@ ALTER TABLE "TeamMember" ADD CONSTRAINT "TeamMember_user_id_fkey" FOREIGN KEY ("
 ALTER TABLE "TeamMember" ADD CONSTRAINT "TeamMember_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "Project"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Meeting" ADD CONSTRAINT "Meeting_created_by_id_fkey" FOREIGN KEY ("created_by_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Event" ADD CONSTRAINT "Event_created_by_id_fkey" FOREIGN KEY ("created_by_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Meeting" ADD CONSTRAINT "Meeting_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "Project"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Event" ADD CONSTRAINT "Event_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "Project"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "MeetingException" ADD CONSTRAINT "MeetingException_meeting_id_fkey" FOREIGN KEY ("meeting_id") REFERENCES "Meeting"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "EventException" ADD CONSTRAINT "EventException_event_id_fkey" FOREIGN KEY ("event_id") REFERENCES "Event"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "MeetingParticipant" ADD CONSTRAINT "MeetingParticipant_added_by_id_fkey" FOREIGN KEY ("added_by_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "EventParticipant" ADD CONSTRAINT "EventParticipant_added_by_id_fkey" FOREIGN KEY ("added_by_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "MeetingParticipant" ADD CONSTRAINT "MeetingParticipant_meeting_id_fkey" FOREIGN KEY ("meeting_id") REFERENCES "Meeting"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "EventParticipant" ADD CONSTRAINT "EventParticipant_event_id_fkey" FOREIGN KEY ("event_id") REFERENCES "Event"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "MeetingParticipant" ADD CONSTRAINT "MeetingParticipant_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "EventParticipant" ADD CONSTRAINT "EventParticipant_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "MeetingCheckin" ADD CONSTRAINT "MeetingCheckin_meeting_id_fkey" FOREIGN KEY ("meeting_id") REFERENCES "Meeting"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "EventCheckin" ADD CONSTRAINT "EventCheckin_event_id_fkey" FOREIGN KEY ("event_id") REFERENCES "Event"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "MeetingCheckin" ADD CONSTRAINT "MeetingCheckin_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "EventCheckin" ADD CONSTRAINT "EventCheckin_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
