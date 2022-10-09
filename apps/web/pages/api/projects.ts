@@ -1,4 +1,6 @@
-// Next.js API route support: https://nextjs.org/docs/api-routes/introduction
+(BigInt as any).prototype.toJSON = function () {
+  return this.toString();
+};
 import type { NextApiRequest, NextApiResponse } from "next";
 import prisma from "common/prisma";
 

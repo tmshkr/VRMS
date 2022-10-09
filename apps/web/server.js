@@ -13,10 +13,6 @@ const httpsOptions = {
   cert: fs.readFileSync("./localhost.crt"),
 };
 
-BigInt.prototype.toJSON = function () {
-  return this.toString();
-};
-
 app.prepare().then(() => {
   createServer(httpsOptions, (req, res) => {
     const parsedUrl = parse(req.url, true);

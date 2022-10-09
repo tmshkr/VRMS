@@ -11,70 +11,84 @@ const typeDefs = `
   type Query {
     users: [User]
     projects: [Project]
-    meetings: [Meeting]
+    events: [Event]
   }
 
   type User {
     id: BigInt
     slack_id: String
-    meetings: [Meeting]
+    slack_team_id: String
+    events: [Event]
     projects: [Project]
     real_name: String
+    profile_image: String
+    username: String
   }
   
   type Project {
     id: BigInt
     created_by: String
+    gcal_calendar_id: String
     is_active: Boolean
-    meetings: [Meeting]
+    events: [Event]
     name: String
     teamMembers: [User]
+    slack_team_id: String
+    slug: String
   }
 
-  type Meeting {
+  type Event {
     id: BigInt
+    all_day: Boolean
     created_by: String
     is_active: Boolean
     project: Project!
     project_id: BigInt
     rrule: String
     slack_channel_id: String
+    slack_team_id: String
+    slug: String
     start_time: DateTime
     end_time: DateTime
     title: String
     description: String
-    meetingParticipants: [User]
+    eventParticipants: [User]
   }
 `;
+
+const userSelect = {
+  id: true,
+  email: false,
+  real_name: true,
+  slack_id: true,
+  slack_team_id: true,
+  profile_image: true,
+  username: true,
+};
 
 const resolvers = {
   Query: {
     users(parent, args, context) {
       return prisma.user.findMany({
-        select: {
-          id: true,
-          email: false,
-          real_name: true,
-          slack_id: true,
-        },
+        select: userSelect,
       });
     },
     projects(parent, args, context) {
       return prisma.project.findMany();
     },
-    meetings(parent, args, context) {
-      return prisma.meeting.findMany();
+    events(parent, args, context) {
+      return prisma.event.findMany();
     },
   },
 
   User: {
-    meetings(parent, args, context) {
-      return prisma.meetingParticipant
+    events(parent, args, context) {
+      return prisma.eventParticipant
         .findMany({
           where: { user_id: parent.id },
-          include: { meeting: true },
+          include: { event: true },
         })
-        .then((data) => data.map(({ meeting }) => meeting));
+        .then((data) => data.map(({ event }) => event));
     },
     projects(parent, args, context) {
       return prisma.teamMember
@@ -87,8 +101,8 @@ const resolvers = {
   },
 
   Project: {
-    meetings(parent, args, context) {
-      return prisma.meeting.findMany({
+    events(parent, args, context) {
+      return prisma.event.findMany({
         where: { project_id: parent.id },
       });
     },
@@ -98,12 +112,7 @@ const resolvers = {
           where: { project_id: parent.id },
           include: {
             member: {
-              select: {
-                id: true,
-                email: false,
-                real_name: true,
-                slack_id: true,
-              },
+              select: userSelect,
             },
           },
         })
@@ -113,19 +122,14 @@ const resolvers = {
     },
   },
 
-  Meeting: {
-    meetingParticipants(parent, args, context) {
-      return prisma.meetingParticipant
+  Event: {
+    eventParticipants(parent, args, context) {
+      return prisma.eventParticipant
         .findMany({
-          where: { meeting_id: parent.id },
+          where: { event_id: parent.id },
           include: {
             participant: {
-              select: {
-                id: true,
-                email: false,
-                real_name: true,
-                slack_id: true,
-              },
+              select: userSelect,
             },
           },
         })
