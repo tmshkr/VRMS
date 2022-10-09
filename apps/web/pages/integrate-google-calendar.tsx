@@ -12,15 +12,17 @@ const CalendarGuidePage = () => {
         </p>
         <p>
           You can allow this on a per-calendar basis by going into your Google
-          Calendar's <b>Share with specific people</b> settings and adding&nbsp;
+          Calendar&apos;s <b>Share with specific people</b> settings and
+          adding&nbsp;
           <a href="mailto:calendar@meetbot-hq.iam.gserviceaccount.com">
             calendar@meetbot-hq.iam.gserviceaccount.com
           </a>{" "}
           with <b>Make changes to events</b> permissions.
         </p>
         <p>
-          You'll also need your Google Calendar's ID, which can be found under
-          the <b>Integrate calendar</b> heading in your calendar's settings.
+          You&apos;ll also need your Google Calendar&apos;s ID, which can be
+          found under the <b>Integrate calendar</b> heading in your
+          calendar&apos;s settings.
         </p>
 
         <p>Resources</p>
