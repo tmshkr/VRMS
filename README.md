@@ -21,13 +21,13 @@ A Slack app to help volunteers create, manage, and view projects and meetings.
 
 The following API endpoints are publicly available:
 
-[/api/graphql](https://vrms-main.us-west-1.elasticbeanstalk.com/api/graphql)
+[/api/graphql](https://meetbot.app/api/graphql)
 
-[/api/meetings](https://vrms-main.us-west-1.elasticbeanstalk.com/api/meetings)
+[/api/meetings](https://meetbot.app/api/meetings)
 
-[/api/projects](https://vrms-main.us-west-1.elasticbeanstalk.com/api/projects)
+[/api/projects](https://meetbot.app/api/projects)
 
-[/api/users](https://vrms-main.us-west-1.elasticbeanstalk.com/api/users)
+[/api/users](https://meetbot.app/api/users)
 
 ## Getting Started
 
