@@ -27,9 +27,8 @@ const typeDefs = `
   
   type Project {
     id: BigInt
-    created_by: String
+    created_by_id: BigInt
     gcal_calendar_id: String
-    is_active: Boolean
     events: [Event]
     name: String
     teamMembers: [User]
@@ -40,11 +39,10 @@ const typeDefs = `
   type Event {
     id: BigInt
     all_day: Boolean
-    created_by: String
-    is_active: Boolean
+    created_by_id: BigInt
     project: Project!
     project_id: BigInt
-    rrule: String
+    recurrence: [String]
     slack_channel_id: String
     slack_team_id: String
     slug: String
