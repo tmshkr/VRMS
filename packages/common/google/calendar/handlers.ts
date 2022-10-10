@@ -187,7 +187,10 @@ export async function handleCreateException(gcalExceptions, gcalEventId) {
     where: {
       event_id_original_start_time: {
         event_id: record.id,
-        original_start_time: new Date(gcalEvent.originalStartTime.dateTime),
+        original_start_time: new Date(
+          gcalEvent.originalStartTime.dateTime ||
+            gcalEvent.originalStartTime.date
+        ),
       },
     },
     create: row,
