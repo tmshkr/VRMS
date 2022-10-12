@@ -8,7 +8,7 @@ A Slack app to help volunteers create, manage, and view projects and meetings.
 
 - [MongoDB](https://github.com/mongodb/node-mongodb-native)
 - [NextJS](https://nextjs.org/)
-- [PostgreSQL](https://www.postgresql.org/)
+- [PlanetScale](https://planetscale.com/)
 - [Prisma](https://www.prisma.io/)
 - [Slack Bolt](https://slack.dev/bolt-js/tutorial/getting-started)
 - [TypeScript](https://www.typescriptlang.org/)
@@ -31,7 +31,7 @@ The following API endpoints are publicly available:
 
 ## Getting Started
 
-Once you've [forked](https://github.com/tmshkr/vrms/fork) the repository,
+Once you've [forked](https://github.com/tmshkr/meetbot/fork) the repository,
 clone it to your local machine and install the dependencies:
 
 ```
@@ -49,15 +49,31 @@ cp .env.example .env
 
 ### Provision your databases
 
-You'll need a Postgres database, so you can either run one locally
-or use a service like [ElephantSQL](https://www.elephantsql.com/).
+You'll need a MySQL-compatible database, so you can either run one locally
+or use a service like [PlanetScale](https://planetscale.com/).
 
-Provide your connection string starting with `postgres://` as the `DATABASE_URL` in your `.env`.
+Provide your connection string starting with `mysql://` as the `DATABASE_URL` in your `.env`.
 
 You'll also need a MongoDB instance for task scheduling with [Agenda](https://github.com/agenda/agenda) and other document data storage.
 
 [MongoDB Cloud](https://www.mongodb.com/cloud) or a local MongoDB server
 can be used to provide your `MONGO_URI` connection string.
+
+### HTTPS dev server
+
+Slack requires the sign-in redirect URL to be served over HTTPS,
+so you can generate your own self-signed certificate with the following command:
+
+```
+cd apps/web
+openssl req -x509 -out localhost.crt -keyout localhost.key \
+  -days 365 \
+  -newkey rsa:2048 -nodes -sha256 \
+  -subj '/CN=localhost' -extensions EXT -config <( \
+   printf "[dn]\nCN=localhost\n[req]\ndistinguished_name = dn\n[EXT]\nsubjectAltName=DNS:localhost\nkeyUsage=digitalSignature\nextendedKeyUsage=serverAuth")
+```
+
+You can follow the directions in this [Medium article](https://medium.com/@greg.farrow1/nextjs-https-for-a-local-dev-server-98bb441eabd7) to trust the certificate on your local machine.
 
 ### Create a Slack app
 
@@ -87,12 +103,6 @@ Copy and paste the token starting with `xapp` as the `SLACK_APP_TOKEN` in your `
 
 To get the `SLACK_BOT_TOKEN`, click **OAuth & Permissions** from the sidebar under the **Features** heading.
 On that page, you'll find the **Bot User OAuth Token** starting with `xoxb`.
-
-### Sign In with GitHub
-
-Create a [New OAuth App](https://github.com/settings/developers) to allow sign in with GitHub.
-
-Provide the `GITHUB_ID` and `GITHUB_SECRET` variables in your `.env`.
 
 ### Google Calendar integration
 
