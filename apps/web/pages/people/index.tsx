@@ -19,8 +19,11 @@ export default function People({ people }) {
 }
 
 export async function getServerSideProps(context) {
-  const people =
-    await prisma.$queryRaw`SELECT id, real_name, username FROM "User" ORDER BY lower(real_name) ASC`;
+  const people = await prisma.user.findMany({
+    where: { visibility: "PUBLIC" },
+    orderBy: { real_name: "asc" },
+    select: { id: true, username: true, real_name: true },
+  });
 
   return {
     props: { people },
