@@ -15,7 +15,7 @@
     "prisma:migrate": "prisma migrate deploy",
     "prisma:seed": "prisma db seed",
     "prisma:studio": "prisma studio",
-    "start": "npm run prisma:migrate && turbo run start --parallel"
+    "start": "turbo run start --parallel"
   },
   "devDependencies": {
     "@mermaid-js/mermaid-cli": "^9.1.6",
