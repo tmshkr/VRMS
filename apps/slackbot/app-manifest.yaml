@@ -8,7 +8,7 @@ features:
     messages_tab_enabled: true
     messages_tab_read_only_enabled: false
   bot_user:
-    display_name: VRMS-dev-YOUR-NAME
+    display_name: meetbot-dev-YOUR-NAME
     always_online: true
 oauth_config:
   redirect_urls:
