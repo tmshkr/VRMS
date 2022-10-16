@@ -84,7 +84,7 @@ export const getHomeTab = async (slack_id: string, slack_team_id: string) => {
             type: "button",
             text: {
               type: "plain_text",
-              text: "Create New Project",
+              text: ":heavy_plus_sign: New Project",
               emoji: true,
             },
             action_id: "create_new_project",
@@ -147,7 +147,17 @@ function renderProject(project) {
     type: "section",
     text: {
       type: "mrkdwn",
-      text: `:small_blue_diamond: ${project.name}`,
+      text: `:large_blue_circle:  ${project.name}`,
+    },
+    accessory: {
+      type: "button",
+      text: {
+        type: "plain_text",
+        text: ":gear: Edit Project",
+        emoji: true,
+      },
+      value: project.id.toString(),
+      action_id: "edit_project",
     },
   };
 }
@@ -162,7 +172,7 @@ function renderMeeting(event, userTimezone) {
         type: "section",
         text: {
           type: "mrkdwn",
-          text: `:small_blue_diamond: *${event.title}* – ${dayjs(nextMeeting)
+          text: `:large_blue_circle: *${event.title}* – ${dayjs(nextMeeting)
             .tz(userTimezone)
             .format("dddd, MMMM D, h:mm a")} – <${generateEventLink(
             event.gcal_event_id,
