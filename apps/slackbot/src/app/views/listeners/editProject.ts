@@ -83,7 +83,7 @@ export const editProject = async ({ ack, body, view, client, logger }) => {
     ({ member }) => member.slack_id
   );
   const returningMembers = _.intersectionBy(
-    teamMembers.filter((member) => member.status !== "ACTIVE"),
+    teamMembers.filter((member) => !member.is_active),
     selectedUsers,
     ({ member }) => member.slack_id
   );
@@ -105,7 +105,7 @@ export const editProject = async ({ ack, body, view, client, logger }) => {
             user_id: { in: removedMembers.map(({ user_id }) => user_id) },
           },
           data: {
-            status: "INACTIVE",
+            is_active: false,
           },
         },
       },
@@ -118,7 +118,7 @@ export const editProject = async ({ ack, body, view, client, logger }) => {
       project_id: projectId,
     },
     data: {
-      status: "ACTIVE",
+      is_active: true,
     },
   });
 
