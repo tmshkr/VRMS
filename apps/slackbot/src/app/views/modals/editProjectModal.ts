@@ -2,11 +2,13 @@ import prisma from "common/prisma";
 
 export const editProjectModal = async ({ body, client, ack, logger }) => {
   await ack();
-  console.log(body);
+
   const projectId = BigInt(body.actions[0].value);
   const project = await prisma.project.findUnique({
     where: { id: projectId },
-    include: { team_members: { include: { member: true } } },
+    include: {
+      team_members: { where: { is_active: true }, include: { member: true } },
+    },
   });
   if (!project) return;
 
@@ -57,9 +59,9 @@ export const editProjectModal = async ({ body, client, ack, logger }) => {
               emoji: true,
             },
             action_id: "team_members",
-            initial_conversations: project.team_members
-              .filter((teamMember) => teamMember.status === "ACTIVE")
-              .map(({ member }) => member.slack_id),
+            initial_conversations: project.team_members.map(
+              ({ member }) => member.slack_id
+            ),
             filter: {
               include: ["im"],
               exclude_bot_users: true,
