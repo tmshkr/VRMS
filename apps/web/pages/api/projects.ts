@@ -8,6 +8,8 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  const projects = await prisma.project.findMany();
+  const projects = await prisma.project.findMany({
+    where: { visibility: "PUBLIC" },
+  });
   res.status(200).json(projects);
 }

@@ -15,6 +15,7 @@ export default async function handler(
       real_name: true,
       slack_id: true,
     },
+    where: { visibility: "PUBLIC" },
   });
 
   res.status(200).json(users);

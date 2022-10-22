@@ -8,7 +8,9 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  const meetings = await prisma.event.findMany({ where: {} });
+  const meetings = await prisma.event.findMany({
+    where: { visibility: "PUBLIC" },
+  });
 
   res.status(200).json(meetings);
 }
