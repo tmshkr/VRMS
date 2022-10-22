@@ -25,6 +25,7 @@ export default Projects;
 export async function getServerSideProps(context) {
   const projects = await prisma.project.findMany({
     select: { name: true, slug: true },
+    where: { is_active: true, visibility: "PUBLIC" },
   });
   return {
     props: { projects },

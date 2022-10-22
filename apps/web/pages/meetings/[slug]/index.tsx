@@ -69,6 +69,7 @@ export async function getServerSideProps(context) {
             },
           },
         },
+        where: { is_active: true },
       },
     },
   });

@@ -76,6 +76,7 @@ export async function getServerSideProps(context) {
           position: true,
           member: { select: { real_name: true, username: true } },
         },
+        where: { is_active: true },
       },
     },
   });

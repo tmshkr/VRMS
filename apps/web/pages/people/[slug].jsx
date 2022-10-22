@@ -201,14 +201,16 @@ export async function getServerSideProps(context) {
       username: true,
       event_assignments: {
         select: { event: { select: { slug: true, title: true } } },
+        where: { is_active: true },
       },
       team_assignments: {
         select: { project: { select: { slug: true, name: true } } },
+        where: { is_active: true },
       },
     },
   });
 
-  if (!user) {
+  if (!user || user.visibility !== "PUBLIC") {
     return {
       redirect: {
         destination: "/",
