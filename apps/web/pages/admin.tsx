@@ -10,7 +10,7 @@ const AdminPage = (props) => {
 };
 
 AdminPage.auth = {
-  allowedRoles: ["ADMIN"],
+  allowedRoles: ["APP_ADMIN", "WORKSPACE_ADMIN"],
 };
 
 export default AdminPage;
