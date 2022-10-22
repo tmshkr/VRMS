@@ -37,6 +37,7 @@ model AppRoleOnUser {
 enum Visibility {
   PUBLIC
   PRIVATE
+  WORKSPACE
 }
 
 model User {
