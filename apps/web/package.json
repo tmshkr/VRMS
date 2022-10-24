@@ -3,9 +3,9 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "dev": "node server.js",
-    "build": "next build",
-    "start": "next start",
+    "dev": "cross-env TZ=UTC node server.js",
+    "build": "cross-env TZ=UTC next build",
+    "start": "cross-env TZ=UTC next start",
     "lint": "next lint"
   },
   "dependencies": {
