@@ -3,7 +3,7 @@ import prisma from "common/prisma";
 export const editProjectModal = async ({ body, client, ack, logger }) => {
   await ack();
 
-  const projectId = BigInt(body.actions[0].value);
+  const projectId = BigInt(body.actions[0].selected_option.value);
   const project = await prisma.project.findUnique({
     where: { id: projectId },
     include: {

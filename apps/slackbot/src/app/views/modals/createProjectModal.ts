@@ -21,7 +21,22 @@ export const createProjectModal = async ({ body, client, ack, logger }) => {
           },
           element: {
             type: "plain_text_input",
-            action_id: "new_project_title",
+            action_id: "project_title",
+          },
+        },
+        {
+          type: "input",
+          label: {
+            type: "plain_text",
+            text: "Description",
+          },
+          element: {
+            type: "plain_text_input",
+            action_id: "project_description",
+            placeholder: {
+              type: "plain_text",
+              text: "The purpose of this project is to...",
+            },
           },
         },
         {

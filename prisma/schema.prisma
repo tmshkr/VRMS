@@ -78,6 +78,7 @@ model Project {
 
   created_by_id    BigInt
   created_by_user  User       @relation(fields: [created_by_id], references: [id])
+  description      String
   gcal_calendar_id String
   name             String
   slack_team_id    String

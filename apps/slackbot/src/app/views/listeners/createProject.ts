@@ -7,9 +7,8 @@ import { initSync } from "common/google/calendar/sync";
 export const createProject = async ({ ack, body, view, client, logger }) => {
   await ack();
 
-  const { new_project_title, team_members, gcal_calendar_id } = getInnerValues(
-    view.state.values
-  );
+  const { project_title, project_description, team_members, gcal_calendar_id } =
+    getInnerValues(view.state.values);
 
   const projectCreator = await prisma.user.findUniqueOrThrow({
     where: {
@@ -66,11 +65,12 @@ export const createProject = async ({ ack, body, view, client, logger }) => {
 
   await prisma.project.create({
     data: {
-      name: new_project_title.value,
+      name: project_title.value,
+      description: project_description.value,
       created_by_id: projectCreator.id,
       gcal_calendar_id: gcal_calendar_id.value,
       slack_team_id: body.user.team_id,
-      slug: getSlug(new_project_title.value),
+      slug: getSlug(project_title.value),
       team_members: {
         create: members.map(({ id, slack_id }) => {
           if (slack_id === body.user.id) {
@@ -97,13 +97,13 @@ export const createProject = async ({ ack, body, view, client, logger }) => {
   for (const { slack_id } of members) {
     await client.chat.postMessage({
       channel: slack_id,
-      text: `<@${body.user.id}> has added you to the ${new_project_title.value} team!`,
+      text: `<@${body.user.id}> has added you to the ${project_title.value} team!`,
       blocks: [
         {
           type: "section",
           text: {
             type: "mrkdwn",
-            text: `<@${body.user.id}> has added you to the *${new_project_title.value}* team!`,
+            text: `<@${body.user.id}> has added you to the *${project_title.value}* team!`,
           },
         },
       ],
