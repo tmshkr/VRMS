@@ -113,7 +113,7 @@ export const getHomeTab = async (slack_id: string, slack_team_id: string) => {
             type: "button",
             text: {
               type: "plain_text",
-              text: "Create New Meeting",
+              text: ":heavy_plus_sign: New Meeting",
               emoji: true,
             },
             action_id: "create_new_meeting",
@@ -147,16 +147,20 @@ function renderProject(project) {
     type: "section",
     text: {
       type: "mrkdwn",
-      text: `:large_blue_circle:  ${project.name}`,
+      text: `*<${process.env.NEXTAUTH_URL}/projects/${project.slug}|${project.name}>*\n${project.description}`,
     },
     accessory: {
-      type: "button",
-      text: {
-        type: "plain_text",
-        text: ":gear: Edit Project",
-        emoji: true,
-      },
-      value: project.id.toString(),
+      type: "overflow",
+      options: [
+        {
+          text: {
+            type: "plain_text",
+            text: ":gear: Edit Project",
+            emoji: true,
+          },
+          value: project.id.toString(),
+        },
+      ],
       action_id: "edit_project",
     },
   };
@@ -172,13 +176,29 @@ function renderMeeting(event, userTimezone) {
         type: "section",
         text: {
           type: "mrkdwn",
-          text: `:large_blue_circle: *${event.title}* – ${dayjs(nextMeeting)
+          text: `*<${process.env.NEXTAUTH_URL}/meetings/${event.slug}|${
+            event.title
+          }>*\n${dayjs(nextMeeting)
             .tz(userTimezone)
-            .format("dddd, MMMM D, h:mm a")} – <${generateEventLink(
+            .format("dddd, MMMM D, h:mm a")}\n<${generateEventLink(
             event.gcal_event_id,
             originalStartTime,
             event.project.gcal_calendar_id
           )}|Add to Calendar>`,
+        },
+        accessory: {
+          type: "overflow",
+          options: [
+            {
+              text: {
+                type: "plain_text",
+                text: ":gear: Edit Meeting",
+                emoji: true,
+              },
+              value: event.id.toString(),
+            },
+          ],
+          action_id: "edit_meeting",
         },
       }
     : null;
