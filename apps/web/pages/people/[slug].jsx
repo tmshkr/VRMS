@@ -199,6 +199,7 @@ export async function getServerSideProps(context) {
       profile_image: true,
       real_name: true,
       username: true,
+      visibility: true,
       event_assignments: {
         select: { event: { select: { slug: true, title: true } } },
         where: { is_active: true },
