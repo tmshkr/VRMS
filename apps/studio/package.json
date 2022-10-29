@@ -4,8 +4,8 @@
   "description": "",
   "main": "dist/index.js",
   "scripts": {
-    "start": "(npx prisma studio&) && NODE_PATH=dist node dist/index.js",
-    "dev": "(npx prisma studio&) && NODE_PATH=src nodemon src/index.ts",
+    "start": "(npx prisma studio&) && cross-env NODE_PATH=dist node dist/index.js",
+    "dev": "(npx prisma studio&) && cross-env NODE_PATH=src nodemon src/index.ts",
     "build": "rm -rf dist && tsc -p ."
   },
   "dependencies": {

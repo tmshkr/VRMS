@@ -28,6 +28,7 @@ export async function getServerSideProps(context) {
       title: true,
       slug: true,
     },
+    where: { status: "CONFIRMED", visibility: "PUBLIC" },
   });
   return {
     props: { meetings },

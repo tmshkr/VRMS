@@ -1,42 +1,40 @@
-export const createProjectModal = async ({ body, client, ack, logger }) => {
+import prisma from "common/prisma";
+
+export const editProjectModal = async ({ body, client, ack, logger }) => {
   await ack();
+
+  const projectId = BigInt(body.actions[0].selected_option.value);
+  const project = await prisma.project.findUnique({
+    where: { id: projectId },
+    include: {
+      team_members: { where: { is_active: true }, include: { member: true } },
+    },
+  });
+  if (!project) return;
+
   await client.views.open({
-    // Pass a valid trigger_id within 3 seconds of receiving it
     trigger_id: body.trigger_id,
     // View payload
     view: {
       type: "modal",
       // View identifier
-      callback_id: "create_project_modal",
+      callback_id: "edit_project_modal",
+      private_metadata: projectId.toString(),
       title: {
         type: "plain_text",
-        text: "Create New Project",
+        text: "Edit Project",
       },
       blocks: [
         {
           type: "input",
           label: {
             type: "plain_text",
-            text: "What should the project's name be?",
+            text: "Project Name",
           },
           element: {
             type: "plain_text_input",
-            action_id: "project_title",
-          },
-        },
-        {
-          type: "input",
-          label: {
-            type: "plain_text",
-            text: "Description",
-          },
-          element: {
-            type: "plain_text_input",
-            action_id: "project_description",
-            placeholder: {
-              type: "plain_text",
-              text: "The purpose of this project is to...",
-            },
+            action_id: "project_name",
+            initial_value: project.name,
           },
         },
         {
@@ -48,13 +46,7 @@ export const createProjectModal = async ({ body, client, ack, logger }) => {
           element: {
             type: "plain_text_input",
             action_id: "gcal_calendar_id",
-          },
-        },
-        {
-          type: "section",
-          text: {
-            type: "mrkdwn",
-            text: `_Check out the <${process.env.NEXTAUTH_URL}/integrate-google-calendar|Google Calendar Integration Guide> for help with this_`,
+            initial_value: project.gcal_calendar_id,
           },
         },
         {
@@ -67,7 +59,9 @@ export const createProjectModal = async ({ body, client, ack, logger }) => {
               emoji: true,
             },
             action_id: "team_members",
-            initial_conversations: [body.user.id],
+            initial_conversations: project.team_members.map(
+              ({ member }) => member.slack_id
+            ),
             filter: {
               include: ["im"],
               exclude_bot_users: true,

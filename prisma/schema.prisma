@@ -2,13 +2,13 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 datasource db {
-  provider = "mysql"
-  url      = env("DATABASE_URL")
+  provider             = "mysql"
+  url                  = env("DATABASE_URL")
   referentialIntegrity = "prisma"
 }
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
   previewFeatures = ["referentialIntegrity"]
 }
 
@@ -17,8 +17,9 @@ generator erd {
 }
 
 enum AppRole {
-  ADMIN
+  APP_ADMIN
   FACILITATOR
+  WORKSPACE_ADMIN
 }
 
 model AppRoleOnUser {
@@ -36,6 +37,7 @@ model AppRoleOnUser {
 enum Visibility {
   PUBLIC
   PRIVATE
+  WORKSPACE
 }
 
 model User {
@@ -71,23 +73,18 @@ model User {
   @@index(username)
 }
 
-enum ProjectStatus {
-  ACTIVE
-  INACTIVE
-  INDETERMINATE
-}
-
 model Project {
   id BigInt @id @default(autoincrement())
 
   created_by_id    BigInt
-  created_by_user  User          @relation(fields: [created_by_id], references: [id])
+  created_by_user  User       @relation(fields: [created_by_id], references: [id])
+  description      String
   gcal_calendar_id String
   name             String
   slack_team_id    String
-  slug             String        @unique
-  status           ProjectStatus @default(ACTIVE)
-  visibility       Visibility    @default(PUBLIC)
+  slug             String     @unique
+  is_active        Boolean    @default(true)
+  visibility       Visibility @default(PUBLIC)
 
   events       Event[]
   team_members TeamMember[]
@@ -104,19 +101,13 @@ enum ProjectRole {
   GUEST
 }
 
-enum MemberStatus {
-  ACTIVE
-  INACTIVE
-  INDETERMINATE
-}
-
 model TeamMember {
   user_id    BigInt
   project_id BigInt
 
   added_by_id BigInt
-  status      MemberStatus @default(ACTIVE)
-  role        ProjectRole  @default(MEMBER)
+  is_active   Boolean     @default(true)
+  role        ProjectRole @default(MEMBER)
   position    String?
 
   created_at DateTime @default(now())

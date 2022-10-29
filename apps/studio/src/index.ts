@@ -45,7 +45,7 @@ app.use(async (req, res, next) => {
       return result.app_roles.map(({ role }) => role);
     });
 
-  if (app_roles.includes("ADMIN")) {
+  if (app_roles.includes("APP_ADMIN")) {
     next();
   } else res.status(401).send("Unauthorized");
 });
