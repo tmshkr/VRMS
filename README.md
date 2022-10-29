@@ -117,11 +117,10 @@ To get the necessary environment variables for the app, follow the steps below:
 
 ### Migrate and seed the database
 
-Before you can use the database, you'll need to generate the Prisma client, push the schema to your database, and seed the database with users from Slack:
+Before you can use the database, you'll need to push the schema to your database and seed the database with users from Slack:
 
 ```
-npx prisma generate
-npx prisma migrate deploy
+npx prisma db push
 npx prisma db seed
 ```
 
