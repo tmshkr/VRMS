@@ -2,7 +2,6 @@ import { defineConfig } from "cypress";
 require("dotenv").config();
 
 export default defineConfig({
-  chromeWebSecurity: false,
   blockHosts: ["*.google-analytics.com", "*.onetrust.com", "*.cookielaw.org"],
   e2e: {
     setupNodeEvents(on, config) {

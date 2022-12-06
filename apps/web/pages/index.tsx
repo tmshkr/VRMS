@@ -34,6 +34,7 @@ const LandingPage = () => {
           <img
             alt="add to slack"
             className="mt-12 mx-auto"
+            data-cy="add-to-slack-button"
             src="https://platform.slack-edge.com/img/add_to_slack.png"
             srcSet="https://platform.slack-edge.com/img/add_to_slack.png 1x, https://platform.slack-edge.com/img/add_to_slack@2x.png 2x"
           />
