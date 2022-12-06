@@ -37,5 +37,12 @@ Cypress.Commands.add("dashboardLogin", () => {
       "contain",
       Cypress.env("TEST_SLACK_USERNAME")
     );
+
+    // Install Slack app
+    cy.get('[data-cy="add-to-slack-button"]').click();
+
+    cy.origin(`meetbot-hq.slack.com`, () => {
+      cy.get('[data-qa="oauth_submit_button"]').click();
+    });
   });
 });
