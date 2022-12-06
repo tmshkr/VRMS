@@ -16,7 +16,8 @@
     "prisma:seed": "prisma db seed",
     "prisma:studio": "prisma studio",
     "start": "turbo run start --parallel",
-    "cy:open": "cypress open"
+    "cy:open": "cypress open",
+    "cy:run": "cypress run"
   },
   "devDependencies": {
     "@mermaid-js/mermaid-cli": "^9.1.6",
