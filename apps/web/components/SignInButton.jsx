@@ -8,7 +8,9 @@ export default function SignInButton({ user }) {
         <span className="sr-only">Open user menu</span>
         <div className="mr-4 text-right">
           <div className="text-gray-800">{user.name}</div>
-          <div className="text-gray-500">{user.email}</div>
+          <div data-test="user-email" className="text-gray-500">
+            {user.email}
+          </div>
         </div>
         <img
           className="h-8 w-8 rounded-full"
@@ -20,6 +22,7 @@ export default function SignInButton({ user }) {
   ) : (
     <a
       href={`/api/auth/signin`}
+      data-test="signin-button"
       className="text-white py-3 px-4 rounded-md no-underline bg-blue-500 hover:bg-blue-400"
       onClick={(e) => {
         e.preventDefault();
