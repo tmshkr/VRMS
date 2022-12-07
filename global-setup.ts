@@ -28,10 +28,14 @@ export async function globalSetup(config: FullConfig) {
     .locator('[data-qa="login_password"]')
     .fill(process.env.TEST_SLACK_PASSWORD);
   await page.locator('[data-qa="signin_button"]').click();
-  await page.locator('[data-qa="oauth_submit_button"]').click();
+  await page
+    .locator('[data-qa="oauth_submit_button"]')
+    .click({ timeout: 60 * 1000 });
 
   await page.locator('[data-test="add-to-slack-button"]').click();
-  await page.locator('[data-qa="oauth_submit_button"]').click();
+  await page
+    .locator('[data-qa="oauth_submit_button"]')
+    .click({ timeout: 60 * 1000 });
   await expect(page.locator("h2")).toContainText(
     /Thank you!|Oops, Something Went Wrong!/
   );
