@@ -1,8 +1,13 @@
 // global-setup.ts
 import { chromium, expect, FullConfig } from "@playwright/test";
 import { getMongoClient } from "common/mongo";
+const fs = require("fs");
 
 export async function globalSetup(config: FullConfig) {
+  if (fs.existsSync("storageState.json")) {
+    return;
+  }
+
   const browser = await chromium.launch();
   const page = await browser.newPage();
 
@@ -24,13 +29,12 @@ export async function globalSetup(config: FullConfig) {
     .fill(process.env.TEST_SLACK_PASSWORD);
   await page.locator('[data-qa="signin_button"]').click();
   await page.locator('[data-qa="oauth_submit_button"]').click();
-  await page.locator('[data-test="add-to-slack-button"]').click();
 
+  await page.locator('[data-test="add-to-slack-button"]').click();
   await page.locator('[data-qa="oauth_submit_button"]').click();
   await expect(page.locator("h2")).toContainText(
     /Thank you!|Oops, Something Went Wrong!/
   );
-
   await expect(await getTeamInstall()).toBeTruthy();
 
   // Save signed-in state to 'storageState.json'.
