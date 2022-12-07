@@ -46,15 +46,13 @@ export default globalSetup;
 
 async function blockHosts(page) {
   const blockedHosts = [
-    "google-analytics.com",
-    "onetrust.com",
-    "cookielaw.org",
-    "doubleclick.net",
+    /google-analytics\.com/,
+    /onetrust\.com/,
+    /cookielaw\.org/,
+    /doubleclick\.net/,
   ];
   for (const host of blockedHosts) {
-    await page.route(new RegExp(host), (route) => {
-      route.abort();
-    });
+    await page.route(host, (route) => route.abort());
   }
 }
 
