@@ -13,7 +13,7 @@ export async function globalSetup(config: FullConfig) {
 
   await blockHosts(page);
 
-  await page.goto("https://localhost:3000");
+  await page.goto(process.env.NEXTAUTH_URL);
   await page.locator('[data-test="signin-button"]').click();
   await page.getByText("Sign in with Slack").click();
   await page.waitForURL(/.*redir=/);
