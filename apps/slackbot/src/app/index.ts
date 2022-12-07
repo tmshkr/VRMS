@@ -34,7 +34,7 @@ if (!process.env.ENABLE_DISTRIBUTION) {
   appConfig.token = process.env.SLACK_BOT_TOKEN;
 } else {
   appConfig.port = 8000;
-  appConfig.redirectUri = process.env.SLACK_INSTALL_REDIRECT_URI;
+  appConfig.redirectUri = `${process.env.NEXTAUTH_URL}/slack/oauth_redirect`;
   appConfig.stateSecret = process.env.SLACK_STATE_SECRET;
   appConfig.installationStore = installationStore;
   appConfig.installerOptions = {
