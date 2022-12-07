@@ -9,7 +9,7 @@ export async function globalSetup(config: FullConfig) {
   }
 
   const browser = await chromium.launch();
-  const page = await browser.newPage();
+  const page = await browser.newPage({ ignoreHTTPSErrors: true });
 
   await blockHosts(page);
 
