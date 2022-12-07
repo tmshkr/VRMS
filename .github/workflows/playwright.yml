@@ -17,9 +17,9 @@ jobs:
       - name: Create env file
         run: echo "${{ secrets.TEST_ENV_FILE }}" > .env
       - name: Start docker compose
-        run: docker-compose -f docker-compose.test.yml up --wait
-      - name: Install Playwright Browsers
-        run: npx playwright install --with-deps chromium
+        run: docker compose -f docker-compose.test.yml up -d
+      - name: Install Playwright
+        run: npx playwright install --with-deps chromium && npm install -D @playwright/test
       - name: Run Playwright tests
         run: npx playwright test
       - uses: actions/upload-artifact@v3
