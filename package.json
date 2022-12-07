@@ -12,10 +12,11 @@
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "lint": "turbo run lint",
     "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate deploy",
+    "prisma:push": "prisma db push",
     "prisma:seed": "prisma db seed",
     "prisma:studio": "prisma studio",
-    "start": "turbo run start --parallel"
+    "start": "turbo run start --parallel",
+    "start:test": "npm run prisma:push && npm run start"
   },
   "devDependencies": {
     "@mermaid-js/mermaid-cli": "^9.1.6",
