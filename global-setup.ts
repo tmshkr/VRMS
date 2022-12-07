@@ -57,14 +57,12 @@ async function blockHosts(page) {
 async function getTeamInstall() {
   const mongoClient = await getMongoClient();
   let tries = 0;
-  const fetch = async () =>
-    await mongoClient
+
+  while (tries < 5) {
+    const teamInstall = await mongoClient
       .db()
       .collection("slackTeamInstalls")
       .findOne({ _id: process.env.TEST_SLACK_TEAM_ID });
-
-  while (tries < 5) {
-    const teamInstall = await fetch();
     if (teamInstall) {
       return teamInstall;
     }
