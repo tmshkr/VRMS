@@ -39,4 +39,4 @@ jobs:
           path: playwright-report/
           retention-days: 30
       - name: Stop docker compose
-        run: docker-compose -f docker-compose.test.yml down
+        run: docker compose -f docker-compose.test.yml down
