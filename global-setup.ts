@@ -36,9 +36,7 @@ export async function globalSetup(config: FullConfig) {
   await page
     .locator('[data-qa="oauth_submit_button"]')
     .click({ timeout: 60 * 1000 });
-  await expect(page.locator("h2")).toContainText(
-    /Thank you!|Oops, Something Went Wrong!/
-  );
+  await expect(page.locator("h2")).toContainText(/Thank you!/);
   await expect(await getTeamInstall()).toBeTruthy();
 
   // Save signed-in state to 'storageState.json'.
