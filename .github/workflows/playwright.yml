@@ -1,11 +1,15 @@
 name: Playwright Tests
 on:
   pull_request:
-    branches: [main]
-    types: [ready_for_review]
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
 
 jobs:
   test:
+    if: !github.event.pull_request.draft
     timeout-minutes: 60
     runs-on: ubuntu-latest
     steps:
