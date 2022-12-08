@@ -9,7 +9,7 @@ on:
 
 jobs:
   test:
-    if: !github.event.pull_request.draft
+    if: github.event.pull_request.draft == false
     timeout-minutes: 60
     runs-on: ubuntu-latest
     steps:
