@@ -18,6 +18,12 @@ jobs:
         run: echo "${{ secrets.TEST_ENV_FILE }}" > .env
       - name: Start docker compose
         run: docker compose -f docker-compose.test.yml up -d
+      - name: Wait for server
+        run: |
+          while ! curl --output /dev/null --silent --head --fail https://localhost -k; do
+            printf '.'
+            sleep 5
+          done
       - name: Install Playwright
         run: npx playwright install --with-deps chromium && npm install -D @playwright/test
       - name: Run Playwright tests
