@@ -1,4 +1,4 @@
-# meetbot
+# Meetbot
 
 ## Overview
 
