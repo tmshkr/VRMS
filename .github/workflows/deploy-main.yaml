@@ -5,12 +5,35 @@ on:
       - main
 
 jobs:
-  build:
+  build_test_push:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
       - run: docker build -t ${{ secrets.DOCKER_USERNAME }}/meetbot:main .
+      - name: Create test env file
+        run: echo "${{ secrets.TEST_ENV_FILE }}" > .env
+      - name: Start docker compose
+        run: docker compose -f docker-compose.test.yml up -d
+        env:
+          ENVIRONMENT: main
+      - name: Wait for server
+        run: |
+          while ! curl --output /dev/null --silent --head --fail https://localhost -k; do
+            printf '.'
+            sleep 5
+          done
+      - name: Install Playwright
+        run: npm install -D @playwright/test && npx playwright install --with-deps chromium
+      - name: Run Playwright tests
+        run: npx playwright test
+      - uses: actions/upload-artifact@v3
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30
+      - name: Stop docker compose
+        run: docker compose -f docker-compose.test.yml down
       - run: docker push ${{ secrets.DOCKER_USERNAME }}/meetbot:main
   deploy:
     runs-on: ubuntu-latest
