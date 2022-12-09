@@ -30,7 +30,7 @@ const LandingPage = () => {
           </a>
           .
         </p>
-        <a href="/slack/install">
+        <a data-test="add-to-slack-button" href="/slack/install">
           <img
             alt="add to slack"
             className="mt-12 mx-auto"

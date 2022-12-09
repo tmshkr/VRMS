@@ -1,0 +1,43 @@
+name: PR Tests
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+
+jobs:
+  test:
+    if: github.event.pull_request.draft == false
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16
+      - run: docker build -t ${{ secrets.DOCKER_USERNAME }}/meetbot:test .
+      - name: Create env file
+        run: echo "${{ secrets.TEST_ENV_FILE }}" > .env
+      - name: Start docker compose
+        run: docker compose -f docker-compose.test.yml up -d
+        env:
+          ENVIRONMENT: test
+      - name: Wait for server
+        run: |
+          while ! curl --output /dev/null --silent --head --fail https://localhost -k; do
+            printf '.'
+            sleep 5
+          done
+      - name: Install Playwright
+        run: npm install -D @playwright/test && npx playwright install --with-deps chromium
+      - name: Run Playwright tests
+        run: npx playwright test
+      - uses: actions/upload-artifact@v3
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30
+      - name: Stop docker compose
+        run: docker compose -f docker-compose.test.yml down
