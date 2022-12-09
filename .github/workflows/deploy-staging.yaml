@@ -1,4 +1,4 @@
-name: Build and Deploy Docker Image
+name: Build, Test, Deploy (staging)
 on:
   push:
     branches:
