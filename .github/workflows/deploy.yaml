@@ -39,28 +39,28 @@ jobs:
           region: ${{ secrets.AWS_DEFAULT_REGION }}
           deployment_package: deploy.zip
           wait_for_environment_recovery: 60
-    test:
-      needs: deploy
-      timeout-minutes: 60
-      runs-on: ubuntu-latest
-      steps:
-        - uses: actions/checkout@v3
-        - name: Install Playwright
-          run: npm install -D @playwright/test && npx playwright install --with-deps chromium
-        - name: Wait for server
-          run: |
-            while ! curl --output /dev/null --silent --head --fail ${{ secrets.ENVIRONMENT_URL }} -k; do
-              printf '.'
-              sleep 5
-            done
-        - name: Create env file
-          run: echo "${{ secrets.ENV_FILE }}" > .env
-        - name: Run Playwright tests
-          run: npx playwright test
-        - uses: actions/upload-artifact@v3
-          with:
-            name: playwright-report
-            path: playwright-report/
-            retention-days: 30
-        - name: Stop docker compose
-          run: docker compose -f docker-compose.test.yml down
+  test:
+    needs: deploy
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Playwright
+        run: npm install -D @playwright/test && npx playwright install --with-deps chromium
+      - name: Wait for server
+        run: |
+          while ! curl --output /dev/null --silent --head --fail ${{ secrets.ENVIRONMENT_URL }} -k; do
+            printf '.'
+            sleep 5
+          done
+      - name: Create env file
+        run: echo "${{ secrets.ENV_FILE }}" > .env
+      - name: Run Playwright tests
+        run: npx playwright test
+      - uses: actions/upload-artifact@v3
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30
+      - name: Stop docker compose
+        run: docker compose -f docker-compose.test.yml down
