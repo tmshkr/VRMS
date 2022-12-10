@@ -16,7 +16,8 @@
     "prisma:seed": "prisma db seed",
     "prisma:studio": "prisma studio",
     "start": "turbo run start --parallel",
-    "start:test": "npm run prisma:push && npm run start"
+    "start:test": "npm run prisma:push && npm run start",
+    "test:e2e": "turbo run test --filter=e2e"
   },
   "devDependencies": {
     "@mermaid-js/mermaid-cli": "^9.1.6",

@@ -1,5 +1,5 @@
 {
-  "name": "tests",
+  "name": "e2e",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -10,8 +10,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@playwright/test": "^1.28.1",
-    "common": "*",
-    "dotenv": "^16.0.3"
+    "common": "*"
   }
 }
