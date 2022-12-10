@@ -1,0 +1,70 @@
+name: Build, Deploy, Test
+on:
+  push:
+    branches:
+      - main
+      - staging
+
+env:
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+      - run: docker build -t ${{ secrets.DOCKER_USERNAME }}/meetbot:${{ github.sha }} .
+      - run: docker push ${{ secrets.DOCKER_USERNAME }}/meetbot:${{ github.sha }}
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    environment: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set server_name
+        run: node nginx/server_name.js "${{ secrets.SERVER_NAMES }}"
+      - name: Get env file
+        run: aws s3 cp ${{ secrets.ENV_FILE_S3_URI }} .env
+      - run: printf "%s\nTAG=${{ github.sha }}" >> .env
+      - name: Generate deployment package
+        run: zip -r deploy.zip . -x '*.git*'
+      - name: Deploy to EB
+        uses: einaregilsson/beanstalk-deploy@v20
+        with:
+          aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          application_name: meetbot
+          environment_name: meetbot-${{ github.ref_name }}
+          version_label: ${{ github.ref_name }}-${{ github.sha }}
+          version_description: ${{ github.event.head_commit.message }}
+          region: ${{ secrets.AWS_DEFAULT_REGION }}
+          deployment_package: deploy.zip
+          wait_for_environment_recovery: 60
+  test:
+    needs: deploy
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Dependencies
+        run: npm install && npx playwright install --with-deps chromium
+      - name: Wait for server
+        run: |
+          while ! curl --output /dev/null --silent --head --fail ${{ secrets.ENVIRONMENT_URL }}; do
+            printf '.'
+            sleep 5
+          done
+      - name: Get env file
+        run: aws s3 cp ${{ secrets.ENV_FILE_S3_URI }} .env
+      - name: Run e2e tests
+        run: npm run test:e2e
+      - uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: playwright-report
+          path: packages/e2e/playwright-report/
+          retention-days: 30

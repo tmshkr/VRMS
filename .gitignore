@@ -28,7 +28,7 @@ yarn-error.log*
 .env.development.local
 .env.test.local
 .env.production.local
-.env
+.env*
 
 # turbo
 .turbo
@@ -44,8 +44,8 @@ repl*
 dist
 *.key
 *.crt
-/test-results/
-/playwright-report/
-/playwright/.cache/
+**/test-results/
+**/playwright-report/
+**/playwright/.cache/
 
 storageState.json

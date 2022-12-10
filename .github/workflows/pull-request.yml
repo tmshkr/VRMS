@@ -12,32 +12,37 @@ jobs:
     if: github.event.pull_request.draft == false
     timeout-minutes: 60
     runs-on: ubuntu-latest
+    environment: test
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
           node-version: 16
       - run: docker build -t ${{ secrets.DOCKER_USERNAME }}/meetbot:test .
-      - name: Create env file
-        run: echo "${{ secrets.TEST_ENV_FILE }}" > .env
+      - name: Get env file
+        run: aws s3 cp ${{ secrets.ENV_FILE_S3_URI }} .env
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
       - name: Start docker compose
         run: docker compose -f docker-compose.test.yml up -d
-        env:
-          ENVIRONMENT: test
       - name: Wait for server
         run: |
           while ! curl --output /dev/null --silent --head --fail https://localhost -k; do
             printf '.'
             sleep 5
           done
-      - name: Install Playwright
-        run: npm install -D @playwright/test && npx playwright install --with-deps chromium
-      - name: Run Playwright tests
-        run: npx playwright test
+      - name: Install Dependencies
+        run: npm install && npx playwright install --with-deps chromium
+      - name: Run e2e tests
+        run: npm run test:e2e
       - uses: actions/upload-artifact@v3
+        if: always()
         with:
           name: playwright-report
-          path: playwright-report/
+          path: packages/e2e/playwright-report/
           retention-days: 30
       - name: Stop docker compose
+        if: always()
         run: docker compose -f docker-compose.test.yml down
