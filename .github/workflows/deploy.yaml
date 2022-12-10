@@ -1,0 +1,66 @@
+name: Build, Deploy, Test
+on:
+  push:
+    branches:
+      - main
+      - staging
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+      - run: docker build -t ${{ secrets.DOCKER_USERNAME }}/meetbot:${{ github.sha }} .
+      - run: docker push ${{ secrets.DOCKER_USERNAME }}/meetbot:${{ github.sha }}
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: ${{ GITHUB_REF_NAME }}
+      url: ${{ secrets.ENVIRONMENT_URL }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set server_name
+        run: node nginx/server_name.js "${{ secrets.SERVER_NAMES }}"
+      - run: echo "${{ secrets.ENV_FILE }}" > .env
+      - run: echo "TAG=${{ github.sha }}" >> .env
+      - name: Generate deployment package
+        run: zip -r deploy.zip . -x '*.git*'
+      - name: Deploy to EB
+        uses: einaregilsson/beanstalk-deploy@v20
+        with:
+          aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          application_name: meetbot
+          environment_name: meetbot-${{ GITHUB_REF_NAME }}
+          version_label: ${{ GITHUB_REF_NAME }}-${{ github.sha }}
+          version_description: ${{ github.event.head_commit.message }}
+          region: ${{ secrets.AWS_DEFAULT_REGION }}
+          deployment_package: deploy.zip
+          wait_for_environment_recovery: 60
+    test:
+      needs: deploy
+      timeout-minutes: 60
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v3
+        - name: Install Playwright
+          run: npm install -D @playwright/test && npx playwright install --with-deps chromium
+        - name: Wait for server
+          run: |
+            while ! curl --output /dev/null --silent --head --fail ${{ secrets.ENVIRONMENT_URL }} -k; do
+              printf '.'
+              sleep 5
+            done
+        - name: Create env file
+          run: echo "${{ secrets.ENV_FILE }}" > .env
+        - name: Run Playwright tests
+          run: npx playwright test
+        - uses: actions/upload-artifact@v3
+          with:
+            name: playwright-report
+            path: playwright-report/
+            retention-days: 30
+        - name: Stop docker compose
+          run: docker compose -f docker-compose.test.yml down
