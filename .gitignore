@@ -44,8 +44,8 @@ repl*
 dist
 *.key
 *.crt
-/test-results/
-/playwright-report/
-/playwright/.cache/
+**/test-results/
+**/playwright-report/
+**/playwright/.cache/
 
 storageState.json
