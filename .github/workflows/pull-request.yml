@@ -21,6 +21,10 @@ jobs:
       - run: docker build -t ${{ secrets.DOCKER_USERNAME }}/meetbot:test .
       - name: Get env file
         run: aws s3 cp ${{ secrets.ENV_FILE_S3_URI }} .env
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
       - name: Start docker compose
         run: docker compose -f docker-compose.test.yml up -d
       - name: Wait for server
