@@ -28,7 +28,7 @@ jobs:
         run: node nginx/server_name.js "${{ secrets.SERVER_NAMES }}"
       - name: Get env file
         run: aws s3 cp ${{ secrets.ENV_FILE_S3_URI }} .env
-      - run: echo "\nTAG=${{ github.sha }}" >> .env
+      - run: printf "%s\nTAG=${{ github.sha }}" >> .env
       - name: Generate deployment package
         run: zip -r deploy.zip . -x '*.git*'
       - name: Deploy to EB
