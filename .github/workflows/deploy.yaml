@@ -5,7 +5,7 @@ on:
       - main
       - staging
 env:
-  name: ${{ env.GITHUB_REF_NAME }}
+  name: staging
 
 jobs:
   build:
