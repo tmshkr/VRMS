@@ -5,6 +5,11 @@ on:
       - main
       - staging
 
+env:
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -21,7 +26,8 @@ jobs:
       - uses: actions/checkout@v3
       - name: Set server_name
         run: node nginx/server_name.js "${{ secrets.SERVER_NAMES }}"
-      - run: echo "${{ secrets.ENV_FILE }}" > .env
+      - name: Get env file
+        run: aws s3 cp ${{ secrets.ENV_FILE_S3_URI }} .env
       - run: echo "TAG=${{ github.sha }}" >> .env
       - name: Generate deployment package
         run: zip -r deploy.zip . -x '*.git*'
@@ -48,12 +54,12 @@ jobs:
         run: npm install && npx playwright install --with-deps chromium
       - name: Wait for server
         run: |
-          while ! curl --output /dev/null --silent --head --fail ${{ secrets.ENVIRONMENT_URL }} -k; do
+          while ! curl --output /dev/null --silent --head --fail ${{ secrets.ENVIRONMENT_URL }}; do
             printf '.'
             sleep 5
           done
-      - name: Create env file
-        run: echo "${{ secrets.ENV_FILE }}" > .env
+      - name: Get env file
+        run: aws s3 cp ${{ secrets.ENV_FILE_S3_URI }} .env
       - name: Run e2e tests
         run: npm run test:e2e
       - uses: actions/upload-artifact@v3
