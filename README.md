@@ -17,18 +17,6 @@ A Slack app to help volunteers create, manage, and view projects and meetings.
 
 ![schema](/prisma/ERD.svg)
 
-## API Endpoints
-
-The following API endpoints are publicly available:
-
-[/api/graphql](https://meetbot.app/api/graphql)
-
-[/api/meetings](https://meetbot.app/api/meetings)
-
-[/api/projects](https://meetbot.app/api/projects)
-
-[/api/users](https://meetbot.app/api/users)
-
 ## Getting Started
 
 Once you've [forked](https://github.com/tmshkr/meetbot/fork) the repository,
